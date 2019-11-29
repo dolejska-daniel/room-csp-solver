@@ -1,0 +1,27 @@
+{
+	"rooms": [
+		{ "name": "Room 5", "beds": 8 },
+		{ "name": "Room 6", "beds": 7 },
+		{ "name": "Room 7", "beds": 8 },
+		{ "name": "Room 8", "beds": 5 },
+		{ "name": "Room 9", "beds": 5 },
+		{ "name": "Room 10", "beds": 5 },
+		{ "name": "Room 11", "beds": 4 },
+		{ "name": "Room 12", "beds": 2 },
+		{ "name": "Room 13", "beds": 3 },
+		{ "name": "LA", "beds": 8 },
+		{ "name": "RA", "beds": 8 }
+	],
+	"participants": [
+		{ "name":  "M1", "gender": "m" },
+		{ "name":  "M2", "gender": "m" },
+		{ "name":  "M3", "gender": "m" },
+		{ "name":  "M4", "gender": "m" },
+		{ "name":  "M5", "gender": "m" },
+		{ "name":  "F1", "gender": "f" }
+	],
+	"constraints": [
+		[ "M1", "M2" ],
+		[ "M3", "M4", "M5" ]
+	]
+}
