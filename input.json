@@ -13,8 +13,8 @@
 		{ "name":  "M5", "gender": "m" },
 		{ "name":  "F1", "gender": "f" }
 	],
-	"constraints": [
-		[ "M1", "M2" ],
-		[ "M3", "M4", "M5" ]
-	]
+	"constraints": {
+		"M1": ["M2"],
+		"M3": ["M4", "M5"]
+	}
 }
