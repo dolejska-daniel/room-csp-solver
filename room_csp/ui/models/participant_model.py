@@ -10,6 +10,10 @@ class ParticipantModel(QAbstractTableModel):
         super(ParticipantModel, self).__init__(*args, **kwargs)
         self.participants = participants or {}
 
+    def add_entry(self, key: str, data: dict):
+        self.participants[key] = data
+        self.layoutChanged.emit()
+
     def data(self, index: QModelIndex, role: int = ...) -> typing.Any:
         if role == Qt.DisplayRole:
             value: dict = list(self.participants.values())[index.row()]

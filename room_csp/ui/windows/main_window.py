@@ -1,11 +1,14 @@
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QItemSelection, QModelIndex, QItemSelectionModel
 from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtWidgets import QMessageBox, QAbstractItemView
 
 from room_csp import Container
 from room_csp.ui.models.constraint_model import ConstraintModel
 from room_csp.ui.models.participant_model import ParticipantModel
 from room_csp.ui.models.room_model import RoomModel
+from room_csp.ui.windows.create_participant_dialog import CreateParticipantDialog
+from room_csp.ui.windows.create_room_dialog import CreateRoomDialog
 
 qt_creator_file = "ui/main_window.ui"
 Ui_MainWindow, QtBaseClass = uic.loadUiType(qt_creator_file)
@@ -94,7 +97,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         pass
 
     def action_create_room(self):
-        pass
+        dialog = CreateRoomDialog(self.room_model, parent=self)
+        dialog.exec_()
 
     def action_delete_constraint(self):
         pass
@@ -106,7 +110,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         pass
 
     def action_create_participant(self):
-        pass
+        dialog = CreateParticipantDialog(self.participant_model, parent=self)
+        dialog.exec_()
 
     def action_save_solution(self):
         pass
@@ -124,6 +129,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         participant_search: QtWidgets.QLineEdit = self.findChild(QtWidgets.QLineEdit, "ParticipantSearch")
         participant_search.textChanged.connect(self.participant_filter_update)
         participant_search.keyReleaseEvent = self.participant_search_keyup
+        participant_search.setFocusPolicy(Qt.StrongFocus)
 
         self.participant_search = participant_search
 
@@ -143,6 +149,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def participant_search_keyup(self, event: QKeyEvent):
         if event.key() == Qt.Key_Escape:
             self.participant_search.setText("")
+        elif event.key() == Qt.Key_Return:
+            if self.participant_proxy_model.rowCount() == 1:
+                index = self.participant_proxy_model.index(0, 0)
+                self.participant_table.selectionModel().setCurrentIndex(index, QItemSelectionModel.Select)
+            else:
+                self.participant_table.selectionModel().clear()
 
     # ---------------------------------------------------------------------dd--
     #   Solution tree and model setup
@@ -193,7 +205,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def setup_participant_table(self):
         participant_table: QtWidgets.QTableView = self.findChild(QtWidgets.QTableView, "ParticipantTable")
         participant_table.setSortingEnabled(True)
-        participant_table.setDragEnabled(True)
+        participant_table.setSelectionMode(QAbstractItemView.SingleSelection)
 
         model = ParticipantModel(participants=Container.participants)
         proxy_model = QtCore.QSortFilterProxyModel()

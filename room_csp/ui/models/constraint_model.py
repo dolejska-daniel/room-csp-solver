@@ -1,6 +1,6 @@
 import typing
 
-from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex
+from PyQt5.QtCore import Qt, QAbstractItemModel, QModelIndex, QMimeData
 
 
 class ConstraintItem(object):

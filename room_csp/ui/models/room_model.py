@@ -10,6 +10,10 @@ class RoomModel(QAbstractTableModel):
         super(RoomModel, self).__init__(*args, **kwargs)
         self.rooms = rooms or {}
 
+    def add_entry(self, key: str, data: dict):
+        self.rooms[key] = data
+        self.layoutChanged.emit()
+
     def data(self, index: QModelIndex, role: int = ...) -> typing.Any:
         if role == Qt.DisplayRole:
             value: dict = list(self.rooms.values())[index.row()]
