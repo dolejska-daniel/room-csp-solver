@@ -31,5 +31,11 @@ class ParticipantModel(QAbstractTableModel):
         return len(participant_example.keys())
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
-        return Qt.ItemIsEnabled
+        flags = Qt.ItemIsEnabled
+
+        # name column
+        if index.column() == 0:
+            flags |= Qt.ItemIsSelectable | Qt.ItemIsDragEnabled
+
+        return flags
 

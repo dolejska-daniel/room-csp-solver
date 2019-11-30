@@ -66,7 +66,7 @@
              <property name="sizePolicy">
               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
+               <verstretch>1</verstretch>
               </sizepolicy>
              </property>
             </widget>
@@ -85,7 +85,7 @@
              <property name="sizePolicy">
               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                <horstretch>0</horstretch>
-               <verstretch>1</verstretch>
+               <verstretch>0</verstretch>
               </sizepolicy>
              </property>
             </widget>
@@ -135,53 +135,190 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionLoad_from_file"/>
+    <addaction name="actionLoad"/>
     <addaction name="separator"/>
-    <addaction name="actionLoad_Rooms"/>
-    <addaction name="actionLoad_participants"/>
-    <addaction name="actionLoad_constraints"/>
+    <addaction name="actionLoadRooms"/>
+    <addaction name="actionLoadParticipants"/>
+    <addaction name="actionLoadConstraints"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>
-    <addaction name="actionSave_solution"/>
+    <addaction name="actionSaveSolution"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
+   <widget class="QMenu" name="menuParticipant">
+    <property name="title">
+     <string>Participant</string>
+    </property>
+    <addaction name="actionCreateParticipant"/>
+    <addaction name="separator"/>
+    <addaction name="actionDeleteParticipant"/>
+   </widget>
+   <widget class="QMenu" name="menuConstraint">
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="title">
+     <string>Constraint</string>
+    </property>
+    <addaction name="actionCreateConstraintFromSelection"/>
+    <addaction name="separator"/>
+    <addaction name="actionDeleteConstraint"/>
+   </widget>
+   <widget class="QMenu" name="menuRoom">
+    <property name="title">
+     <string>Room</string>
+    </property>
+    <addaction name="actionCreateRoom"/>
+    <addaction name="separator"/>
+    <addaction name="actionDeleteRoom"/>
+   </widget>
+   <widget class="QMenu" name="menuSolution">
+    <property name="title">
+     <string>Solution</string>
+    </property>
+    <addaction name="actionSolve"/>
+   </widget>
+   <widget class="QMenu" name="menuOptions">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>Options</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuParticipant"/>
+   <addaction name="menuConstraint"/>
+   <addaction name="menuRoom"/>
+   <addaction name="menuSolution"/>
+   <addaction name="menuOptions"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionLoad_Rooms">
+  <action name="actionLoadRooms">
    <property name="text">
     <string>Load rooms</string>
    </property>
   </action>
-  <action name="actionLoad_participants">
+  <action name="actionLoadParticipants">
    <property name="text">
     <string>Load participants</string>
    </property>
   </action>
-  <action name="actionLoad_constraints">
+  <action name="actionLoadConstraints">
    <property name="text">
     <string>Load constraints</string>
    </property>
   </action>
-  <action name="actionLoad_from_file">
+  <action name="actionLoad">
    <property name="text">
     <string>Load all</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionSave">
    <property name="text">
     <string>Save</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
+   </property>
   </action>
-  <action name="actionSave_solution">
+  <action name="actionSaveSolution">
    <property name="text">
     <string>Save solution</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
    </property>
   </action>
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionCreateParticipant">
+   <property name="text">
+    <string>Create</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionCreate_new_2">
+   <property name="text">
+    <string>Create</string>
+   </property>
+  </action>
+  <action name="actionCreateConstraintFromSelection">
+   <property name="text">
+    <string>Create for participant selection</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+C</string>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionDeleteParticipant">
+   <property name="text">
+    <string>Delete</string>
+   </property>
+  </action>
+  <action name="actionDeleteConstraint">
+   <property name="text">
+    <string>Delete</string>
+   </property>
+  </action>
+  <action name="actionCreateRoom">
+   <property name="text">
+    <string>Create</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionDeleteRoom">
+   <property name="text">
+    <string>Delete</string>
+   </property>
+  </action>
+  <action name="actionSolve">
+   <property name="text">
+    <string>Generate</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+Return</string>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
    </property>
   </action>
  </widget>
