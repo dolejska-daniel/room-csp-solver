@@ -21,6 +21,9 @@ class RoomModel(QAbstractTableModel):
 
     def setData(self, index: QModelIndex, value: typing.Any, role: int = ...) -> bool:
         if role == Qt.EditRole:
+            if value == "":
+                return False
+
             row_key = list(self.rooms.keys())[index.row()]
             row: dict = self.rooms[row_key]
             column_key = list(row.keys())[index.column()]

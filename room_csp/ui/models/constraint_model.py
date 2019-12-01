@@ -49,14 +49,36 @@ class ConstraintItem(object):
 
 class ConstraintModel(QAbstractItemModel):
     constraint_root: ConstraintItem = None
+    source_data: dict = None
 
     def __init__(self, *args, constraints: dict = None, **kwargs):
         super(ConstraintModel, self).__init__(*args, **kwargs)
-        self.constraint_root = ConstraintItem(["Personal constraints"])
-        for participant, target_participants in constraints.items():
+        self.source_data = constraints
+        self.source_to_tree()
+
+        self.dataChanged.connect(self.update_source_data)
+
+    def get_search_strings(self) -> [str]:
+        return list(self.source_data.keys())
+
+    def source_to_tree(self):
+        self.constraint_root = ConstraintItem([""])
+        for participant, target_participants in self.source_data.items():
             source_constraint = ConstraintItem([participant], parent=self.constraint_root)
             for target_participant in target_participants:
                 ConstraintItem([target_participant], parent=source_constraint)
+
+    def tree_to_source(self, output: dict = None):
+        for participant_constraints in self.constraint_root.children:
+            participant_constraints: ConstraintItem
+            participant = participant_constraints.data[0]
+            output[participant] = []
+            for constraint in participant_constraints.children:
+                output[participant].append(constraint.data[0])
+
+    def update_source_data(self):
+        self.source_data.clear()
+        self.tree_to_source(self.source_data)
 
     def data(self, index: QModelIndex, role: int = ...) -> typing.Any:
         if not index.isValid():

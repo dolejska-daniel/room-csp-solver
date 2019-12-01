@@ -1,5 +1,5 @@
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import Qt, QItemSelection, QModelIndex, QItemSelectionModel
+from PyQt5.QtCore import Qt, QItemSelection, QModelIndex, QItemSelectionModel, QRegExp
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QMessageBox, QAbstractItemView
 
@@ -22,6 +22,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     participant_search_completer: QtWidgets.QCompleter = None
 
     # -------------------------------------------------dd--
+    #   constraint_search variables
+    # -------------------------------------------------dd--
+    constraint_search: QtWidgets.QLineEdit = None
+    constraint_search_completer: QtWidgets.QCompleter = None
+
+    # -------------------------------------------------dd--
     #   solution_tree variables
     # -------------------------------------------------dd--
     solution_tree: QtWidgets.QTreeView = None
@@ -30,6 +36,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     #   constraint_tree variables
     # -------------------------------------------------dd--
     constraint_tree: QtWidgets.QTreeView = None
+    constraint_model: ConstraintModel = None
+    constraint_proxy_model: QtCore.QSortFilterProxyModel = None
 
     # -------------------------------------------------dd--
     #   participant_table variables
@@ -59,7 +67,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setup_room_table()
         self.setup_constraint_tree()
         self.setup_solution_tree()
+
         self.setup_participant_search()
+        self.setup_constraint_search()
 
     # ---------------------------------------------------------------------dd--
     #   Menu action setup
@@ -72,6 +82,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.findChild(QtWidgets.QAction, "actionSave").triggered.connect(self.action_save)
         self.findChild(QtWidgets.QAction, "actionSaveSolution").triggered.connect(self.action_save_solution)
         self.findChild(QtWidgets.QAction, "actionExit").triggered.connect(lambda _: exit(0))
+
+        self.findChild(QtWidgets.QMenu, "menuFocus").setTitle("")
+        self.findChild(QtWidgets.QAction, "actionFocusParticipantSearch") \
+            .triggered.connect(lambda _: self.participant_search.setFocus())
+        self.findChild(QtWidgets.QAction, "actionFocusConstraintSearch") \
+            .triggered.connect(lambda _: self.constraint_search.setFocus())
 
         self.findChild(QtWidgets.QAction, "actionCreateParticipant").triggered.connect(self.action_create_participant)
         self.findChild(QtWidgets.QAction, "actionDeleteParticipant").triggered.connect(self.action_delete_participant)
@@ -133,7 +149,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.participant_search = participant_search
 
-        strings = list(self.participant_model.participants.keys())
+        strings = self.participant_model.get_search_strings()
         self.setup_participant_search_completer(strings)
 
     def setup_participant_search_completer(self, strings: [str]):
@@ -157,6 +173,41 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.participant_table.selectionModel().clear()
 
     # ---------------------------------------------------------------------dd--
+    #   Constraint search field and proxy model setup
+    # ---------------------------------------------------------------------dd--
+    def setup_constraint_search(self):
+        constraint_search: QtWidgets.QLineEdit = self.findChild(QtWidgets.QLineEdit, "ConstraintSearch")
+        constraint_search.textChanged.connect(self.constraint_filter_update)
+        constraint_search.keyReleaseEvent = self.constraint_search_keyup
+        constraint_search.setFocusPolicy(Qt.StrongFocus)
+
+        self.constraint_search = constraint_search
+
+        strings = self.constraint_model.get_search_strings()
+        self.setup_constraint_search_completer(strings)
+
+    def setup_constraint_search_completer(self, strings: [str]):
+        completer = QtWidgets.QCompleter(strings)
+        completer.setCompletionMode(completer.PopupCompletion)
+
+        self.constraint_search.setCompleter(completer)
+
+    def constraint_filter_update(self, value: str):
+        regexp = QtCore.QRegExp(f".*{value.replace(' ', '.*')}.*", Qt.CaseInsensitive)
+        self.constraint_proxy_model.setFilterRegExp(regexp)
+        self.constraint_tree.expandAll()
+
+    def constraint_search_keyup(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Escape:
+            self.constraint_search.setText("")
+        elif event.key() == Qt.Key_Return:
+            if self.constraint_proxy_model.rowCount() == 1:
+                index = self.constraint_proxy_model.index(0, 0)
+                self.constraint_tree.selectionModel().setCurrentIndex(index, QItemSelectionModel.Select)
+            else:
+                self.constraint_tree.selectionModel().clear()
+
+    # ---------------------------------------------------------------------dd--
     #   Solution tree and model setup
     # ---------------------------------------------------------------------dd--
     def setup_solution_tree(self):
@@ -170,15 +221,44 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     #   Constraint tree and model setup
     # ---------------------------------------------------------------------dd--
     def setup_constraint_tree(self):
-        constraint_tree: QtWidgets.QTreeView = self.findChild(QtWidgets.QTreeView, "ParticipantConstraintsTree")
+        constraint_tree: QtWidgets.QTreeView = self.findChild(QtWidgets.QTreeView, "ConstraintsTree")
 
         model = ConstraintModel(constraints=Container.constraints)
         model.dataChanged.connect(lambda _: self.constraint_tree.expandAll())
+        proxy_model = QtCore.QSortFilterProxyModel()
+        proxy_model.setFilterKeyColumn(0)
+        proxy_model.filterAcceptsRow = self.constraint_tree_accepts_row
+        proxy_model.setSourceModel(model)
 
-        constraint_tree.setModel(model)
+        constraint_tree.setModel(proxy_model)
         constraint_tree.expandAll()
 
         self.constraint_tree = constraint_tree
+        self.constraint_model = model
+        self.constraint_proxy_model = proxy_model
+
+    def constraint_tree_accepts_row(self, row: int, parent: QModelIndex) -> bool:
+        if not self.constraint_proxy_model:
+            return True
+
+        accepts = False
+        regexp: QRegExp = self.constraint_proxy_model.filterRegExp()
+        index = self.constraint_model.index(row, 0, parent)
+        while index.isValid() and not accepts:
+            data = self.constraint_model.data(index, Qt.DisplayRole)
+            accepts = regexp.exactMatch(data)
+
+            if not accepts:
+                parent_item = index.internalPointer()
+                for child in parent_item.children:
+                    data = child.get_column(0)
+                    accepts = regexp.exactMatch(data)
+                    if accepts:
+                        break
+
+            index = index.parent()
+
+        return accepts
 
     # ---------------------------------------------------------------------dd--
     #   Room table and model setup
@@ -209,6 +289,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         model = ParticipantModel(participants=Container.participants)
         proxy_model = QtCore.QSortFilterProxyModel()
+        proxy_model.setDynamicSortFilter(True)
         proxy_model.setSourceModel(model)
 
         participant_table.setModel(proxy_model)
