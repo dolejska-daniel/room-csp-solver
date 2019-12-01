@@ -1,6 +1,7 @@
 import sys
 
 from PyQt5 import QtWidgets
+
 from room_csp.ui.windows.main_window import MainWindow
 
 

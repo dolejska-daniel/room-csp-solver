@@ -59,11 +59,10 @@ class ConstraintModel(QAbstractItemModel):
         # self.dataChanged.connect(self.update_source)
 
     def add_entry(self, value: str, parent: str = None):
-        print(value, parent)
-        if value is parent or value is None:
+        if value == parent or value is None:
             return
 
-        elif parent is None:
+        if parent is None:
             if value not in self.source_data:
                 self.source_data[value] = []
 
@@ -72,14 +71,13 @@ class ConstraintModel(QAbstractItemModel):
                 self.source_data[parent] = []
             self.source_data[parent].append(value)
 
-        print(self.source_data)
         self.source_to_tree()
 
     def get_search_strings(self) -> [str]:
         return list(self.source_data.keys())
 
     def source_to_tree(self):
-        # self.layoutAboutToBeChanged.emit()
+        self.beginResetModel()
 
         if self.constraint_root is None:
             self.constraint_root = ConstraintItem([""])
@@ -91,6 +89,7 @@ class ConstraintModel(QAbstractItemModel):
             for target_participant in target_participants:
                 ConstraintItem([target_participant], parent=source_constraint)
 
+        self.endResetModel()
         self.layoutChanged.emit()
 
     def tree_to_source(self, output: dict = None):
@@ -147,6 +146,7 @@ class ConstraintModel(QAbstractItemModel):
 
     def rowCount(self, parent: QModelIndex = ...) -> int:
         if parent.column() > 0:
+            print("__rowCount", 0)
             return 0
 
         parent_item = self.constraint_root

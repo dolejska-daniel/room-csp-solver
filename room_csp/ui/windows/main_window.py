@@ -207,6 +207,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         strings = self.participant_model.get_search_strings()
         self.setup_participant_search_completer(strings)
+        self.participant_filter_update("")
 
     def setup_participant_search_completer(self, strings: [str]):
         completer = QtWidgets.QCompleter(strings)
@@ -245,6 +246,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         strings = self.constraint_model.get_search_strings()
         self.setup_constraint_search_completer(strings)
+        self.constraint_filter_update("")
 
     def setup_constraint_search_completer(self, strings: [str]):
         completer = QtWidgets.QCompleter(strings)
@@ -321,12 +323,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         constraint_tree: QtWidgets.QTreeView = self.findChild(QtWidgets.QTreeView, "ConstraintsTree")
 
         model = ConstraintModel(constraints=Container.constraints)
-        model.dataChanged.connect(lambda _: self.constraint_tree.expandAll())
         proxy_model = QtCore.QSortFilterProxyModel()
         proxy_model.setDynamicSortFilter(True)
         proxy_model.setFilterKeyColumn(0)
         proxy_model.filterAcceptsRow = self.constraint_tree_accepts_row
         proxy_model.setSourceModel(model)
+        proxy_model.dataChanged.connect(self.constraint_tree_expand)
+        proxy_model.layoutChanged.connect(self.constraint_tree_expand)
 
         constraint_tree.setModel(proxy_model)
         constraint_tree.selectionModel().selectionChanged.connect(self.constraint_tree_selection_changed)
@@ -335,6 +338,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.constraint_tree = constraint_tree
         self.constraint_model = model
         self.constraint_proxy_model = proxy_model
+
+    def constraint_tree_expand(self):
+        self.constraint_tree.expandAll()
 
     def constraint_tree_selection_changed(self, selected: QItemSelection, deselected: QItemSelection):
         if len(selected.indexes()) > 0:
@@ -350,7 +356,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if not self.constraint_proxy_model:
             return True
 
-        accepts = False
         regexp: QRegExp = self.constraint_proxy_model.filterRegExp()
         index = self.constraint_model.index(row, 0, parent)
         if index.parent().isValid():
