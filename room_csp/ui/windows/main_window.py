@@ -244,19 +244,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         accepts = False
         regexp: QRegExp = self.constraint_proxy_model.filterRegExp()
         index = self.constraint_model.index(row, 0, parent)
-        while index.isValid() and not accepts:
-            data = self.constraint_model.data(index, Qt.DisplayRole)
-            accepts = regexp.exactMatch(data)
-
-            if not accepts:
-                parent_item = index.internalPointer()
-                for child in parent_item.children:
-                    data = child.get_column(0)
-                    accepts = regexp.exactMatch(data)
-                    if accepts:
-                        break
-
+        if index.parent().isValid():
             index = index.parent()
+
+        data = self.constraint_model.data(index, Qt.DisplayRole)
+        accepts = regexp.exactMatch(data)
+        if not accepts:
+            item = index.internalPointer()
+            for child in item.children:
+                data = child.get_column(0)
+                accepts = regexp.exactMatch(data)
+                if accepts:
+                    break
 
         return accepts
 
