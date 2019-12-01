@@ -93,9 +93,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     # ---------------------------------------------------------------------dd--
     def setup_menu_actions(self):
         self.findChild(QtWidgets.QAction, "actionLoad").triggered.connect(self.load)
-        self.findChild(QtWidgets.QAction, "actionLoadRooms").setEnabled(False)
-        self.findChild(QtWidgets.QAction, "actionLoadParticipants").setEnabled(False)
-        self.findChild(QtWidgets.QAction, "actionLoadConstraints").setEnabled(False)
+        self.findChild(QtWidgets.QAction, "actionLoadParticipants").triggered.connect(self.load_participants)
         self.findChild(QtWidgets.QAction, "actionSave").triggered.connect(self.save)
         self.findChild(QtWidgets.QAction, "actionSaveSolution").triggered.connect(self.save_solution)
         self.findChild(QtWidgets.QAction, "actionExit").triggered.connect(lambda _: exit(0))
@@ -145,7 +143,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # only one gender per room (either boys or girls)
         p.addConstraint(SameRoomSameGenders())
         # all participants have room
-        p.addConstraint(FunctionConstraint(all_participants_assigned))
+        p.addConstraint(AllParticipantsAssigned())
         # participants' are in rooms with their mates
         p.addConstraint(FunctionConstraint(custom_participant_requirements))
 
@@ -187,9 +185,33 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         pass
 
     def save(self):
-        pass
+        import json
+
+        contents = {
+            "rooms": list(Container.rooms.values()),
+            "participants": list(Container.participants.values()),
+            "constraints": Container.constraints,
+        }
+
+        filepath, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, "Save contents", filter="JSON file (*.json)")
+        if filepath != "":
+            with open(filepath, "w") as fp:
+                json.dump(contents, fp, ensure_ascii=False)
 
     def load(self):
+        import json
+
+        filepath, file_filter = QtWidgets.QFileDialog.getOpenFileName(self, "Load contents", filter="JSON file (*.json)")
+        if filepath != "":
+            with open(filepath, "r") as fp:
+                data = json.load(fp)
+
+            Container.initialize(data)
+            self.constraint_model.reload_data(Container.constraints)
+            self.participant_model.reload_data(Container.participants)
+            self.room_model.reload_data(Container.rooms)
+
+    def load_participants(self):
         pass
 
     # ---------------------------------------------------------------------dd--
@@ -319,6 +341,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     # ---------------------------------------------------------------------dd--
     def setup_constraint_tree(self):
         constraint_tree: QtWidgets.QTreeView = self.findChild(QtWidgets.QTreeView, "ConstraintsTree")
+        constraint_tree.doubleClicked.connect(self.constraint_tree_item_toggle)
 
         model = ConstraintModel(constraints=Container.constraints)
         proxy_model = ConstraintProxyModel(source_model=model)
@@ -331,11 +354,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         constraint_tree.setModel(proxy_model)
         constraint_tree.selectionModel().selectionChanged.connect(self.constraint_tree_selection_changed)
+        constraint_tree.header().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        constraint_tree.header().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
         constraint_tree.expandAll()
 
         self.constraint_tree = constraint_tree
         self.constraint_model = model
         self.constraint_proxy_model = proxy_model
+
+    def constraint_tree_item_toggle(self, index: QModelIndex):
+        source_index = self.constraint_proxy_model.mapToSource(index)
+        self.constraint_model.toggle_entry(source_index)
 
     def constraint_tree_selection_changed(self, selected: QItemSelection, deselected: QItemSelection):
         if len(selected.indexes()) > 0:

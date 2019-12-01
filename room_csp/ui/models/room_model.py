@@ -8,7 +8,12 @@ class RoomModel(QAbstractTableModel):
 
     def __init__(self, *args, rooms: dict = None, **kwargs):
         super(RoomModel, self).__init__(*args, **kwargs)
-        self.rooms = rooms or {}
+        self.reload_data(rooms or {})
+
+    def reload_data(self, source_data: dict):
+        self.beginResetModel()
+        self.rooms = source_data
+        self.endResetModel()
 
     def add_entry(self, key: str, data: dict):
         self.rooms[key] = data

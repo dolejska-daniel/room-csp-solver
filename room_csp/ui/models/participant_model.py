@@ -8,7 +8,12 @@ class ParticipantModel(QAbstractTableModel):
 
     def __init__(self, *args, participants: dict = None, **kwargs):
         super(ParticipantModel, self).__init__(*args, **kwargs)
-        self.participants = participants or {}
+        self.reload_data(participants or {})
+
+    def reload_data(self, source_data: dict):
+        self.beginResetModel()
+        self.participants = source_data
+        self.endResetModel()
 
     def add_entry(self, key: str, data: dict):
         self.participants[key] = data

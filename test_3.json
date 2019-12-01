@@ -1,0 +1,31 @@
+{
+	"rooms": [
+		{
+			"name": "R1",
+			"beds": 1
+		},
+		{
+			"name": "R2",
+			"beds": 3
+		}
+	],
+	"participants": [
+		{
+			"name": "M1",
+			"gender": "m"
+		},
+		{
+			"name": "M2",
+			"gender": "m"
+		},
+		{
+			"name": "F1",
+			"gender": "f"
+		}
+	],
+	"constraints": {
+		"M1": [
+			"M2"
+		]
+	}
+}

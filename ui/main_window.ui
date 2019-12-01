@@ -144,9 +144,7 @@
     </property>
     <addaction name="actionLoad"/>
     <addaction name="separator"/>
-    <addaction name="actionLoadRooms"/>
     <addaction name="actionLoadParticipants"/>
-    <addaction name="actionLoadConstraints"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>
     <addaction name="actionSaveSolution"/>
@@ -214,19 +212,9 @@
    <addaction name="menuOptions"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionLoadRooms">
-   <property name="text">
-    <string>Load rooms</string>
-   </property>
-  </action>
   <action name="actionLoadParticipants">
    <property name="text">
     <string>Load participants</string>
-   </property>
-  </action>
-  <action name="actionLoadConstraints">
-   <property name="text">
-    <string>Load constraints</string>
    </property>
   </action>
   <action name="actionLoad">

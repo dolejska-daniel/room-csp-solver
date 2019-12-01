@@ -153,89 +153,6 @@ class SameRoomSameGenders(Constraint):
         return True
 
 
-def same_room_same_genders(*args, **kwargs) -> bool:
-    """ Ensures that there is only one gender per existing room. """
-    # variable for current status aggregation
-    room_genders = {room['name']: [] for room in Container.rooms.values()}
-    # map selected participants to assigned room slots
-    for room_slot, participant in zip(Container.room_slots, args):
-        # there is no need to check gender of "noone"
-        if participant == "_":
-            continue
-
-        # get room name from slot
-        participant_room = room_slot.split('_')[0]
-        # shortcut to participant instance
-        p = Container.participants[participant]
-        # save participant gender to aggregation variable
-        room_genders[participant_room].append(p["gender"])
-
-    # for existing rooms and aggregated genders
-    for room, genders in room_genders.items():
-        # if noone is in the room skip it
-        if not genders or not len(genders):
-            continue
-
-        # select first gender as master gender :)
-        master_gender = genders[0]
-        # for all picked genders
-        for gender in genders:
-            if gender != master_gender:
-                return False
-        # remove all entries that do not match master gender
-        genders_filtered = [gender for gender in genders if gender == master_gender]
-        # if those sets are different, the room contains other genders
-        if len(genders_filtered) != len(genders):
-            return False
-
-    # everything is ok
-    return True
-
-
-def all_participants_assigned(*args, **kwargs) -> bool:
-    """ Ensures that all participants are assigned to any room slot. """
-    # variable for current status aggregation
-    assigned_participants = {participant: False for participant in Container.participants.keys()}
-    # map selected participants to assigned room slots
-    for room_slot, participant in zip(Container.room_slots, args):
-        # there is no need to validate room slots of "noone"
-        if participant == "_":
-            continue
-
-        # mark participant as assigned
-        assigned_participants[participant] = True
-
-    # list all unassigned participants
-    unassigned_participant_list = [p for p, assigned in assigned_participants.items() if not assigned]
-    # its ok if there are no unassigned participants
-    if not len(unassigned_participant_list):
-        return True
-
-    # but in this case, there are unassigned participants
-    return False
-
-
-def uniquely_assigned_participants(*args, **kwargs) -> bool:
-    """ Ensures that all participants are assigned only to a single room slot. """
-    # variable for current status aggregation
-    assigned_participants = {participant: False for participant in Container.participants.keys()}
-    # map selected participants to assigned room slots
-    for room_slot, participant in zip(Container.room_slots, args):
-        # there is no need to validate room slots of "noone"
-        if participant == "_":
-            continue
-
-        # check whether this participant is not already marked as assigned
-        if assigned_participants[participant]:
-            return False
-
-        # mark participant as assigned
-        assigned_participants[participant] = True
-
-    # everything is ok
-    return True
-
-
 def custom_participant_requirements(*args, **kwargs) -> bool:
     """ Ensures that all participant's requirements are met. """
     # variable for current status aggregation
@@ -253,12 +170,16 @@ def custom_participant_requirements(*args, **kwargs) -> bool:
 
     # go over all defined constraints
     for constraint_participant, constraints in Container.constraints.items():
+        constraints: list
         # select first room as master room
         master_room = participant_rooms[constraint_participant]
         # validate, that all participants are in the same room
-        for participant in constraints:
+        for constraint in constraints:
+            if not constraint["enabled"]:
+                continue
+
             # if not, discard this solution
-            if participant_rooms[participant] != master_room:
+            if participant_rooms[constraint["participant"]] != master_room:
                 return False
 
     # everything is ok

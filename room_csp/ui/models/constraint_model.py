@@ -8,7 +8,10 @@ class ConstraintItem(object):
     children: list = None
     data: dict = None
 
-    def __init__(self, data, parent=None):
+    def __init__(self, data: dict, parent=None):
+        if "enabled" not in data:
+            data["enabled"] = True
+
         self.data = data
         self.children = []
 
@@ -16,6 +19,9 @@ class ConstraintItem(object):
 
     def __len__(self):
         return len(self.children)
+
+    def toggle(self):
+        self.data["enabled"] = not self.data["enabled"]
 
     def set_parent(self, parent):
         self.parent = parent
@@ -39,7 +45,7 @@ class ConstraintItem(object):
 
     def get_column(self, column):
         try:
-            return self.data[column]
+            return list(self.data.values())[column]
         except (IndexError, KeyError):
             return None
 
@@ -53,10 +59,14 @@ class ConstraintModel(QAbstractItemModel):
 
     def __init__(self, *args, constraints: dict = None, **kwargs):
         super(ConstraintModel, self).__init__(*args, **kwargs)
-        self.source_data = constraints
-        self.source_to_tree()
+        self.reload_data(constraints)
 
-        # self.dataChanged.connect(self.update_source)
+        self.layoutChanged.connect(self.update_source)
+        self.dataChanged.connect(self.update_source)
+
+    def reload_data(self, source_data: dict):
+        self.source_data = source_data
+        self.source_to_tree()
 
     def add_entry(self, value: str, parent: str = None):
         if value == parent or value is None:
@@ -73,6 +83,12 @@ class ConstraintModel(QAbstractItemModel):
 
         self.source_to_tree()
 
+    def toggle_entry(self, index: QModelIndex):
+        index_item: ConstraintItem = index.internalPointer()
+        index_item.toggle()
+
+        self.dataChanged.emit(index, index, [])
+
     def get_search_strings(self) -> [str]:
         return list(self.source_data.keys())
 
@@ -80,14 +96,14 @@ class ConstraintModel(QAbstractItemModel):
         self.beginResetModel()
 
         if self.constraint_root is None:
-            self.constraint_root = ConstraintItem([""])
+            self.constraint_root = ConstraintItem({"participant": "Participant", "enabled": "Enabled"})
         else:
             self.constraint_root.children = []
 
         for participant, target_participants in self.source_data.items():
-            source_constraint = ConstraintItem([participant], parent=self.constraint_root)
+            source_constraint = ConstraintItem({"participant": participant}, parent=self.constraint_root)
             for target_participant in target_participants:
-                ConstraintItem([target_participant], parent=source_constraint)
+                ConstraintItem({"participant": target_participant}, parent=source_constraint)
 
         self.endResetModel()
         self.layoutChanged.emit()
@@ -95,10 +111,12 @@ class ConstraintModel(QAbstractItemModel):
     def tree_to_source(self, output: dict = None):
         for participant_constraints in self.constraint_root.children:
             participant_constraints: ConstraintItem
-            participant = participant_constraints.data[0]
+            data = list(participant_constraints.data.values())
+
+            participant = data[0]
             output[participant] = []
             for constraint in participant_constraints.children:
-                output[participant].append(constraint.data[0])
+                output[participant].append(constraint.data)
 
     def update_source(self):
         self.source_data.clear()
@@ -146,7 +164,6 @@ class ConstraintModel(QAbstractItemModel):
 
     def rowCount(self, parent: QModelIndex = ...) -> int:
         if parent.column() > 0:
-            print("__rowCount", 0)
             return 0
 
         parent_item = self.constraint_root
