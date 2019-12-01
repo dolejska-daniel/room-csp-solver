@@ -31,6 +31,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     #   solution_tree variables
     # -------------------------------------------------dd--
     solution_tree: QtWidgets.QTreeView = None
+    solution_model: SolutionModel = None
 
     # -------------------------------------------------dd--
     #   constraint_tree variables
@@ -150,7 +151,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # ---------------------------------------------dd--
         #   PROBLEM SOLUTION
         # ---------------------------------------------dd--
-        print(p.getSolution())
+        solution_data = p.getSolution()
+        for room_slot, participant in list(solution_data.items()):
+            if participant == '_':
+                del solution_data[room_slot]
+
+        self.solution_model.reload_data(solution_data)
 
     def delete_room(self):
         if self.selected_room is None:
@@ -332,9 +338,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def setup_solution_tree(self):
         solution_tree: QtWidgets.QTreeView = self.findChild(QtWidgets.QTreeView, "SolutionTree")
 
+        model = SolutionModel()
+
+        def expand_all():
+            self.solution_tree.expandAll()
+
+        model.dataChanged.connect(expand_all)
+        model.layoutChanged.connect(expand_all)
+
+        solution_tree.setModel(model)
+        solution_tree.header().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        solution_tree.header().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
         solution_tree.expandAll()
 
         self.solution_tree = solution_tree
+        self.solution_model = model
 
     # ---------------------------------------------------------------------dd--
     #   Constraint tree and model setup

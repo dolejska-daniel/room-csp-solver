@@ -7,7 +7,7 @@ from .participant_proxy_model import ParticipantProxyModel
 from .room_model import RoomModel
 from .room_proxy_model import RoomProxyModel
 
-from .solution_model import SolutionModel
+from .solution_model import SolutionItem, SolutionModel
 
 __all__ = [
     "ConstraintItem",
@@ -18,4 +18,5 @@ __all__ = [
     "RoomModel",
     "RoomProxyModel",
     "SolutionModel",
+    "SolutionItem",
 ]

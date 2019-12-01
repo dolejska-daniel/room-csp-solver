@@ -54,6 +54,9 @@ class ParticipantModel(QAbstractTableModel):
         return len(self.participants)
 
     def columnCount(self, parent: QModelIndex = ...) -> int:
+        if len(self.participants) == 0:
+            return 0
+
         participant_example: dict = list(self.participants.values()).pop()
         return len(participant_example.keys())
 

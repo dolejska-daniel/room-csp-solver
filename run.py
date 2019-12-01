@@ -8,12 +8,5 @@ from room_csp.utils import pyqt_enable_exceptions
 #   PROGRAM INITIALIZATION, DATA LOADING
 # =========================================================================dd==
 
-# load initial data
-with open("input.json", "r") as fd:
-    data = json.load(fd)
-
-# initialize data container
-Container.initialize(data)
-
 pyqt_enable_exceptions()
 setup_and_run_ui()

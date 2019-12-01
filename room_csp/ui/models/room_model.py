@@ -51,6 +51,9 @@ class RoomModel(QAbstractTableModel):
         return len(self.rooms)
 
     def columnCount(self, parent: QModelIndex = ...) -> int:
+        if len(self.rooms) == 0:
+            return 0
+
         room_example: dict = list(self.rooms.values()).pop()
         return len(room_example.keys())
 
