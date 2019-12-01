@@ -8,5 +8,7 @@ from room_csp.utils import pyqt_enable_exceptions
 #   PROGRAM INITIALIZATION, DATA LOADING
 # =========================================================================dd==
 
+# TODO: Return container initialization, seems to help
+
 pyqt_enable_exceptions()
 setup_and_run_ui()
