@@ -12,6 +12,7 @@ def pyqt_enable_exceptions():
 
     sys.excepthook = exception_hook
 
+
 def pyqt_debug_trace():
     import pdb
     import sys

@@ -12,16 +12,6 @@
 		{ "name": "LA", "beds": 8 },
 		{ "name": "RA", "beds": 8 }
 	],
-	"participants": [
-		{ "name":  "M1", "gender": "m" },
-		{ "name":  "M2", "gender": "m" },
-		{ "name":  "M3", "gender": "m" },
-		{ "name":  "M4", "gender": "m" },
-		{ "name":  "M5", "gender": "m" },
-		{ "name":  "F1", "gender": "f" }
-	],
-	"constraints": [
-		[ "M1", "M2" ],
-		[ "M3", "M4", "M5" ]
-	]
+	"participants": [],
+	"constraints": {}
 }

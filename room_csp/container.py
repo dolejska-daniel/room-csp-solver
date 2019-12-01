@@ -13,13 +13,7 @@ class Container:
             participants = data["participants"]
             constraints = data["constraints"]
 
-            room_slots = []
-            for room in rooms:
-                for slot in range(0, room["beds"]):
-                    room_slots.append(f"{room['name']}_{slot}")
-
-            Container.rooms = {r["name"]: r for r in rooms}
-            Container.room_slots = room_slots
+            Container.set_rooms({r["name"]: r for r in rooms})
             Container.set_participants({p["name"]: p for p in participants})
             Container.constraints = constraints
         except KeyError:
@@ -38,3 +32,12 @@ class Container:
 
         for data in Container.participants_by_gender.values():
             data.add('_')
+
+    @staticmethod
+    def set_rooms(rooms: dict):
+        room_slots = []
+        for room in rooms.values():
+            for slot in range(0, room["beds"]):
+                room_slots.append(f"{room['name']}_{slot}")
+
+        Container.room_slots = rooms

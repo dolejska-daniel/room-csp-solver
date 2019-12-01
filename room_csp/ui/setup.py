@@ -12,4 +12,4 @@ def setup_and_run_ui():
     # show main window
     main.show()
 
-    app.exec()
+    app.exec_()

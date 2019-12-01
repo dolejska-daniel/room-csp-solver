@@ -152,11 +152,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         #   PROBLEM SOLUTION
         # ---------------------------------------------dd--
         solution_data = p.getSolution()
-        for room_slot, participant in list(solution_data.items()):
-            if participant == '_':
-                del solution_data[room_slot]
+        if solution_data is None:
+            message = QMessageBox(
+                QMessageBox.Critical, "No solution found",
+                "Program could not find any solution for specified constraints."
+            )
+            message.exec_()
 
-        self.solution_model.reload_data(solution_data)
+        else:
+            for room_slot, participant in list(solution_data.items()):
+                if participant == '_':
+                    del solution_data[room_slot]
+
+            self.solution_model.reload_data(solution_data)
 
     def delete_room(self):
         if self.selected_room is None:
@@ -372,13 +380,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         constraint_tree.setModel(proxy_model)
         constraint_tree.selectionModel().selectionChanged.connect(self.constraint_tree_selection_changed)
-        constraint_tree.header().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
-        constraint_tree.header().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+        model.dataChanged.connect(self.constraint_tree_resize)
+        model.layoutChanged.connect(self.constraint_tree_resize)
         constraint_tree.expandAll()
 
         self.constraint_tree = constraint_tree
         self.constraint_model = model
         self.constraint_proxy_model = proxy_model
+
+    def constraint_tree_resize(self):
+        for column in range(self.room_model.columnCount(QModelIndex())):
+            resize_mode = QtWidgets.QHeaderView.Stretch if column == 0 else QtWidgets.QHeaderView.ResizeToContents
+            self.constraint_tree.header().setSectionResizeMode(column, resize_mode)
 
     def constraint_tree_item_toggle(self, index: QModelIndex):
         source_index = self.constraint_proxy_model.mapToSource(index)
@@ -406,12 +419,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         room_table.setModel(proxy_model)
         room_table.selectionModel().selectionChanged.connect(self.room_table_selection_changed)
-        room_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        room_table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        model.dataChanged.connect(self.room_table_resize)
+        model.layoutChanged.connect(self.room_table_resize)
 
         self.room_table = room_table
         self.room_model = model
         self.room_proxy_model = proxy_model
+
+    def room_table_resize(self):
+        for column in range(self.room_model.columnCount(QModelIndex())):
+            resize_mode = QtWidgets.QHeaderView.Stretch if column == 0 else QtWidgets.QHeaderView.ResizeToContents
+            self.room_table.horizontalHeader().setSectionResizeMode(column, resize_mode)
+        self.room_table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
     def room_table_selection_changed(self, selected: QItemSelection, deselected: QItemSelection):
         if len(selected.indexes()) > 0:
@@ -433,14 +452,22 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         model = ParticipantModel(participants=Container.participants)
         proxy_model = ParticipantProxyModel(source_model=model)
 
+        # TODO: při nepoužití proxy funguje, pravděpodobně thread poblémy
         participant_table.setModel(proxy_model)
+        # participant_table.setModel(model)
         participant_table.selectionModel().selectionChanged.connect(self.participant_table_selection_changed)
-        participant_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        participant_table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        model.dataChanged.connect(self.participant_table_resize)
+        model.layoutChanged.connect(self.participant_table_resize)
 
         self.participant_table = participant_table
         self.participant_model = model
         self.participant_proxy_model = proxy_model
+
+    def participant_table_resize(self):
+        for column in range(self.participant_model.columnCount(QModelIndex())):
+            resize_mode = QtWidgets.QHeaderView.Stretch if column == 0 else QtWidgets.QHeaderView.ResizeToContents
+            self.participant_table.horizontalHeader().setSectionResizeMode(column, resize_mode)
+        self.participant_table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
     def participant_table_selection_changed(self, selected: QItemSelection, deselected: QItemSelection):
         if len(selected.indexes()) > 0:

@@ -21,9 +21,11 @@ class CreateParticipantDialog(QDialog, Ui_CreateParticipantDialog):
     def save(self):
         participant_name: QLineEdit = self.findChild(QLineEdit, "ParticipantName")
         participant_gender: QComboBox = self.findChild(QComboBox, "ParticipantGender")
+        participant_type: QComboBox = self.findChild(QComboBox, "ParticipantType")
 
         self.participant_model.add_entry(participant_name.text(), {
             "name": participant_name.text(),
-            "gender": participant_gender.currentText()
+            "gender": participant_gender.currentText(),
+            "type": participant_type.currentText(),
         })
         self.accept()

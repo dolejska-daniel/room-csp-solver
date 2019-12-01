@@ -1,5 +1,3 @@
-import typing
-
 from PyQt5.QtCore import Qt, QSortFilterProxyModel
 
 from room_csp.ui.models import ParticipantModel

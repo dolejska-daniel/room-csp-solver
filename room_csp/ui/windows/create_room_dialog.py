@@ -1,5 +1,5 @@
 from PyQt5 import uic
-from PyQt5.QtWidgets import QDialog, QLineEdit, QSpinBox, QPushButton
+from PyQt5.QtWidgets import QDialog, QLineEdit, QSpinBox, QPushButton, QComboBox
 
 from room_csp.ui.models import RoomModel
 
@@ -21,9 +21,11 @@ class CreateRoomDialog(QDialog, Ui_CreateRoomDialog):
     def save(self):
         room_name: QLineEdit = self.findChild(QLineEdit, "RoomName")
         room_size: QSpinBox = self.findChild(QSpinBox, "RoomSize")
+        room_type: QComboBox = self.findChild(QComboBox, "RoomType")
 
         self.room_model.add_entry(room_name.text(), {
             "name": room_name.text(),
-            "beds": room_size.value()
+            "beds": room_size.value(),
+            "type": room_type.currentText()
         })
         self.accept()
