@@ -1,7 +1,7 @@
 from PyQt5 import uic
 from PyQt5.QtWidgets import QDialog, QLineEdit, QSpinBox, QPushButton
 
-from room_csp.ui.models.room_model import RoomModel
+from room_csp.ui.models import RoomModel
 
 qt_creator_file = "ui/create_room_dialog.ui"
 Ui_CreateRoomDialog, QtBaseClass = uic.loadUiType(qt_creator_file)

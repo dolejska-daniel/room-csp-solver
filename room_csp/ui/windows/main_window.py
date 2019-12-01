@@ -6,9 +6,7 @@ from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QMessageBox, QAbstractItemView
 
 from room_csp import *
-from room_csp.ui.models.constraint_model import ConstraintModel, ConstraintItem
-from room_csp.ui.models.participant_model import ParticipantModel
-from room_csp.ui.models.room_model import RoomModel
+from room_csp.ui.models import *
 from room_csp.ui.windows.create_participant_dialog import CreateParticipantDialog
 from room_csp.ui.windows.create_room_dialog import CreateRoomDialog
 
@@ -323,13 +321,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         constraint_tree: QtWidgets.QTreeView = self.findChild(QtWidgets.QTreeView, "ConstraintsTree")
 
         model = ConstraintModel(constraints=Container.constraints)
-        proxy_model = QtCore.QSortFilterProxyModel()
-        proxy_model.setDynamicSortFilter(True)
-        proxy_model.setFilterKeyColumn(0)
-        proxy_model.filterAcceptsRow = self.constraint_tree_accepts_row
-        proxy_model.setSourceModel(model)
-        proxy_model.dataChanged.connect(self.constraint_tree_expand)
-        proxy_model.layoutChanged.connect(self.constraint_tree_expand)
+        proxy_model = ConstraintProxyModel(source_model=model)
+
+        def expand_all():
+            self.constraint_tree.expandAll()
+
+        proxy_model.dataChanged.connect(expand_all)
+        proxy_model.layoutChanged.connect(expand_all)
 
         constraint_tree.setModel(proxy_model)
         constraint_tree.selectionModel().selectionChanged.connect(self.constraint_tree_selection_changed)
@@ -338,9 +336,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.constraint_tree = constraint_tree
         self.constraint_model = model
         self.constraint_proxy_model = proxy_model
-
-    def constraint_tree_expand(self):
-        self.constraint_tree.expandAll()
 
     def constraint_tree_selection_changed(self, selected: QItemSelection, deselected: QItemSelection):
         if len(selected.indexes()) > 0:
@@ -352,27 +347,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.action_delete_constraint.setEnabled(self.selected_constraint is not None)
 
-    def constraint_tree_accepts_row(self, row: int, parent: QModelIndex) -> bool:
-        if not self.constraint_proxy_model:
-            return True
-
-        regexp: QRegExp = self.constraint_proxy_model.filterRegExp()
-        index = self.constraint_model.index(row, 0, parent)
-        if index.parent().isValid():
-            index = index.parent()
-
-        data = self.constraint_model.data(index, Qt.DisplayRole)
-        accepts = regexp.exactMatch(data)
-        if not accepts:
-            item = index.internalPointer()
-            for child in item.children:
-                data = child.get_column(0)
-                accepts = regexp.exactMatch(data)
-                if accepts:
-                    break
-
-        return accepts
-
     # ---------------------------------------------------------------------dd--
     #   Room table and model setup
     # ---------------------------------------------------------------------dd--
@@ -381,8 +355,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         room_table.setSortingEnabled(True)
 
         model = RoomModel(rooms=Container.rooms)
-        proxy_model = QtCore.QSortFilterProxyModel()
-        proxy_model.setSourceModel(model)
+        proxy_model = RoomProxyModel(source_model=model)
 
         room_table.setModel(proxy_model)
         room_table.selectionModel().selectionChanged.connect(self.room_table_selection_changed)
@@ -411,9 +384,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         participant_table.setSelectionMode(QAbstractItemView.SingleSelection)
 
         model = ParticipantModel(participants=Container.participants)
-        proxy_model = QtCore.QSortFilterProxyModel()
-        proxy_model.setDynamicSortFilter(True)
-        proxy_model.setSourceModel(model)
+        proxy_model = ParticipantProxyModel(source_model=model)
 
         participant_table.setModel(proxy_model)
         participant_table.selectionModel().selectionChanged.connect(self.participant_table_selection_changed)
@@ -433,4 +404,3 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.action_delete_participant.setEnabled(self.selected_participant is not None)
         self.action_create_constraint.setEnabled(self.selected_participant is not None)
-
