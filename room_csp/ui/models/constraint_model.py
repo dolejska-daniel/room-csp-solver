@@ -32,7 +32,7 @@ class ConstraintItem(object):
         return self.children[row]
 
     def get_row(self):
-        if self.parent:
+        if self.parent is not None:
             return self.parent.children.index(self)
 
         return 0

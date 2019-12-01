@@ -1,9 +1,11 @@
+from constraint import *
+
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt, QItemSelection, QModelIndex, QItemSelectionModel, QRegExp
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QMessageBox, QAbstractItemView
 
-from room_csp import Container
+from room_csp import *
 from room_csp.ui.models.constraint_model import ConstraintModel
 from room_csp.ui.models.participant_model import ParticipantModel
 from room_csp.ui.models.room_model import RoomModel
@@ -107,7 +109,27 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         pass
 
     def action_solve(self):
-        pass
+        # ---------------------------------------------dd--
+        #   PROBLEM AND CONSTRAINT DEFINITION
+        # ---------------------------------------------dd--
+        # p = Problem(solver=RecursiveBacktrackingSolver())
+        p = Problem()
+        # variables are room slots, doman is participant list (with '_' as noone)
+        p.addVariables(Container.room_slots, list(Container.participants.keys()) + ["_"])
+
+        # all participants are assigned to single room slot
+        p.addConstraint(UniquelyAssignedParticipants())
+        # only one gender per room (either boys or girls)
+        p.addConstraint(SameRoomSameGenders())
+        # all participants have room
+        p.addConstraint(FunctionConstraint(all_participants_assigned))
+        # participants' are in rooms with their mates
+        p.addConstraint(FunctionConstraint(custom_participant_requirements))
+
+        # ---------------------------------------------dd--
+        #   PROBLEM SOLUTION
+        # ---------------------------------------------dd--
+        print(p.getSolution())
 
     def action_delete_room(self):
         pass
@@ -200,12 +222,49 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def constraint_search_keyup(self, event: QKeyEvent):
         if event.key() == Qt.Key_Escape:
             self.constraint_search.setText("")
+            self.constraint_tree.selectionModel().clear()
         elif event.key() == Qt.Key_Return:
-            if self.constraint_proxy_model.rowCount() == 1:
-                index = self.constraint_proxy_model.index(0, 0)
+            # clear current selection
+            self.constraint_tree.selectionModel().clear()
+
+            for row in range(0, self.constraint_proxy_model.rowCount()):
+                # create corresponding proxy index
+                index = self.constraint_proxy_model.index(row, 0)
+                # map selection from proxy model to source model
+                source_index = self.constraint_proxy_model.mapToSource(index)
+
+                # get selected item instance
+                constraint_item = source_index.internalPointer()
+                # get filter regular expression
+                regexp: QRegExp = self.constraint_proxy_model.filterRegExp()
+                # check whether current item matches the expression
+                match = regexp.exactMatch(constraint_item.get_column(0))
+                # if not
+                if not match:
+                    # then check all children for matches
+                    for child in constraint_item.children:
+                        # get child data
+                        data = child.get_column(0)
+                        # evaluate match
+                        match = regexp.exactMatch(data)
+                        # if child matches
+                        if match:
+                            # then get its row
+                            child_row = child.get_row()
+                            # build corresponding source index
+                            child_source_index = self.constraint_model.index(child_row, 0, source_index)
+                            # map source index to proxy index
+                            index = self.constraint_proxy_model.mapFromSource(child_source_index)
+                            # match has been found
+                            break
+                else:
+                    # match has been found
+                    break
+
+            # if any match has been found
+            if match:
+                # use proxy index to create new selection
                 self.constraint_tree.selectionModel().setCurrentIndex(index, QItemSelectionModel.Select)
-            else:
-                self.constraint_tree.selectionModel().clear()
 
     # ---------------------------------------------------------------------dd--
     #   Solution tree and model setup
