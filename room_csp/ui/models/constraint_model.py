@@ -56,17 +56,42 @@ class ConstraintModel(QAbstractItemModel):
         self.source_data = constraints
         self.source_to_tree()
 
-        self.dataChanged.connect(self.update_source_data)
+        # self.dataChanged.connect(self.update_source)
+
+    def add_entry(self, value: str, parent: str = None):
+        print(value, parent)
+        if value is parent or value is None:
+            return
+
+        elif parent is None:
+            if value not in self.source_data:
+                self.source_data[value] = []
+
+        else:
+            if parent not in self.source_data:
+                self.source_data[parent] = []
+            self.source_data[parent].append(value)
+
+        print(self.source_data)
+        self.source_to_tree()
 
     def get_search_strings(self) -> [str]:
         return list(self.source_data.keys())
 
     def source_to_tree(self):
-        self.constraint_root = ConstraintItem([""])
+        # self.layoutAboutToBeChanged.emit()
+
+        if self.constraint_root is None:
+            self.constraint_root = ConstraintItem([""])
+        else:
+            self.constraint_root.children = []
+
         for participant, target_participants in self.source_data.items():
             source_constraint = ConstraintItem([participant], parent=self.constraint_root)
             for target_participant in target_participants:
                 ConstraintItem([target_participant], parent=source_constraint)
+
+        self.layoutChanged.emit()
 
     def tree_to_source(self, output: dict = None):
         for participant_constraints in self.constraint_root.children:
@@ -76,7 +101,7 @@ class ConstraintModel(QAbstractItemModel):
             for constraint in participant_constraints.children:
                 output[participant].append(constraint.data[0])
 
-    def update_source_data(self):
+    def update_source(self):
         self.source_data.clear()
         self.tree_to_source(self.source_data)
 

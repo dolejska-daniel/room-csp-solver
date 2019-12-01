@@ -6,7 +6,7 @@ from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QMessageBox, QAbstractItemView
 
 from room_csp import *
-from room_csp.ui.models.constraint_model import ConstraintModel
+from room_csp.ui.models.constraint_model import ConstraintModel, ConstraintItem
 from room_csp.ui.models.participant_model import ParticipantModel
 from room_csp.ui.models.room_model import RoomModel
 from room_csp.ui.windows.create_participant_dialog import CreateParticipantDialog
@@ -55,6 +55,23 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     room_model: RoomModel = None
     room_proxy_model: QtCore.QSortFilterProxyModel = None
 
+    # -------------------------------------------------dd--
+    #   actions variables
+    # -------------------------------------------------dd--
+    action_create_constraint: QtWidgets.QAction = None
+    action_delete_constraint: QtWidgets.QAction = None
+
+    action_delete_participant: QtWidgets.QAction = None
+
+    action_delete_room: QtWidgets.QAction = None
+
+    # -------------------------------------------------dd--
+    #   current selection variables
+    # -------------------------------------------------dd--
+    selected_constraint: ConstraintItem = None
+    selected_participant: str = None
+    selected_room: str = None
+
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
@@ -77,12 +94,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     #   Menu action setup
     # ---------------------------------------------------------------------dd--
     def setup_menu_actions(self):
-        self.findChild(QtWidgets.QAction, "actionLoad").triggered.connect(self.action_load)
+        self.findChild(QtWidgets.QAction, "actionLoad").triggered.connect(self.load)
         self.findChild(QtWidgets.QAction, "actionLoadRooms").setEnabled(False)
         self.findChild(QtWidgets.QAction, "actionLoadParticipants").setEnabled(False)
         self.findChild(QtWidgets.QAction, "actionLoadConstraints").setEnabled(False)
-        self.findChild(QtWidgets.QAction, "actionSave").triggered.connect(self.action_save)
-        self.findChild(QtWidgets.QAction, "actionSaveSolution").triggered.connect(self.action_save_solution)
+        self.findChild(QtWidgets.QAction, "actionSave").triggered.connect(self.save)
+        self.findChild(QtWidgets.QAction, "actionSaveSolution").triggered.connect(self.save_solution)
         self.findChild(QtWidgets.QAction, "actionExit").triggered.connect(lambda _: exit(0))
 
         self.findChild(QtWidgets.QMenu, "menuFocus").setTitle("")
@@ -91,24 +108,32 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.findChild(QtWidgets.QAction, "actionFocusConstraintSearch") \
             .triggered.connect(lambda _: self.constraint_search.setFocus())
 
-        self.findChild(QtWidgets.QAction, "actionCreateParticipant").triggered.connect(self.action_create_participant)
-        self.findChild(QtWidgets.QAction, "actionDeleteParticipant").triggered.connect(self.action_delete_participant)
+        self.findChild(QtWidgets.QAction, "actionCreateParticipant").triggered.connect(self.create_participant)
+        self.action_delete_participant = self.findChild(QtWidgets.QAction, "actionDeleteParticipant")
+        self.action_delete_participant.triggered.connect(self.delete_participant)
+        self.action_delete_participant.setEnabled(False)
 
-        self.findChild(QtWidgets.QAction, "actionCreateConstraintFromSelection") \
-            .triggered.connect(self.action_create_constraint_from_selection)
-        self.findChild(QtWidgets.QAction, "actionDeleteConstraint").triggered.connect(self.action_delete_constraint)
+        self.action_create_constraint = self.findChild(QtWidgets.QAction, "actionCreateConstraintFromSelection")
+        self.action_create_constraint.triggered.connect(self.create_constraint_from_selection)
+        self.action_create_constraint.setEnabled(False)
 
-        self.findChild(QtWidgets.QAction, "actionCreateRoom").triggered.connect(self.action_create_room)
-        self.findChild(QtWidgets.QAction, "actionDeleteRoom").triggered.connect(self.action_delete_room)
+        self.action_delete_constraint = self.findChild(QtWidgets.QAction, "actionDeleteConstraint")
+        self.action_delete_constraint.triggered.connect(self.delete_constraint)
+        self.action_delete_constraint.setEnabled(False)
 
-        self.findChild(QtWidgets.QAction, "actionSolve").triggered.connect(self.action_solve)
+        self.findChild(QtWidgets.QAction, "actionCreateRoom").triggered.connect(self.create_room)
+        self.action_delete_room = self.findChild(QtWidgets.QAction, "actionDeleteRoom")
+        self.action_delete_room.triggered.connect(self.delete_room)
+        self.action_delete_room.setEnabled(False)
 
-        self.findChild(QtWidgets.QAction, "actionAbout").triggered.connect(self.action_about)
+        self.findChild(QtWidgets.QAction, "actionSolve").triggered.connect(self.solve)
 
-    def action_about(self):
+        self.findChild(QtWidgets.QAction, "actionAbout").triggered.connect(self.about)
+
+    def about(self):
         pass
 
-    def action_solve(self):
+    def solve(self):
         # ---------------------------------------------dd--
         #   PROBLEM AND CONSTRAINT DEFINITION
         # ---------------------------------------------dd--
@@ -131,33 +156,42 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # ---------------------------------------------dd--
         print(p.getSolution())
 
-    def action_delete_room(self):
-        pass
+    def delete_room(self):
+        if self.selected_room is None:
+            return
 
-    def action_create_room(self):
+    def create_room(self):
         dialog = CreateRoomDialog(self.room_model, parent=self)
         dialog.exec_()
 
-    def action_delete_constraint(self):
-        pass
+    def delete_constraint(self):
+        if self.selected_constraint is None:
+            return
 
-    def action_create_constraint_from_selection(self):
-        pass
+    def create_constraint_from_selection(self):
+        if self.selected_participant is None:
+            return
 
-    def action_delete_participant(self):
-        pass
+        self.constraint_model.add_entry(
+            self.selected_participant,
+            self.selected_constraint.get_column(0) if self.selected_constraint is not None else None
+        )
 
-    def action_create_participant(self):
+    def delete_participant(self):
+        if self.selected_participant is None:
+            return
+
+    def create_participant(self):
         dialog = CreateParticipantDialog(self.participant_model, parent=self)
         dialog.exec_()
 
-    def action_save_solution(self):
+    def save_solution(self):
         pass
 
-    def action_save(self):
+    def save(self):
         pass
 
-    def action_load(self):
+    def load(self):
         pass
 
     # ---------------------------------------------------------------------dd--
@@ -187,12 +221,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def participant_search_keyup(self, event: QKeyEvent):
         if event.key() == Qt.Key_Escape:
             self.participant_search.setText("")
+            self.participant_table.selectionModel().clear()
+            self.action_create_constraint.setEnabled(False)
         elif event.key() == Qt.Key_Return:
             if self.participant_proxy_model.rowCount() == 1:
                 index = self.participant_proxy_model.index(0, 0)
                 self.participant_table.selectionModel().setCurrentIndex(index, QItemSelectionModel.Select)
+                self.action_create_constraint.setEnabled(True)
             else:
                 self.participant_table.selectionModel().clear()
+                self.action_create_constraint.setEnabled(False)
 
     # ---------------------------------------------------------------------dd--
     #   Constraint search field and proxy model setup
@@ -285,16 +323,28 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         model = ConstraintModel(constraints=Container.constraints)
         model.dataChanged.connect(lambda _: self.constraint_tree.expandAll())
         proxy_model = QtCore.QSortFilterProxyModel()
+        proxy_model.setDynamicSortFilter(True)
         proxy_model.setFilterKeyColumn(0)
         proxy_model.filterAcceptsRow = self.constraint_tree_accepts_row
         proxy_model.setSourceModel(model)
 
         constraint_tree.setModel(proxy_model)
+        constraint_tree.selectionModel().selectionChanged.connect(self.constraint_tree_selection_changed)
         constraint_tree.expandAll()
 
         self.constraint_tree = constraint_tree
         self.constraint_model = model
         self.constraint_proxy_model = proxy_model
+
+    def constraint_tree_selection_changed(self, selected: QItemSelection, deselected: QItemSelection):
+        if len(selected.indexes()) > 0:
+            proxy_index = selected.indexes()[0]
+            source_index = self.constraint_proxy_model.mapToSource(proxy_index)
+            self.selected_constraint = source_index.internalPointer()
+        else:
+            self.selected_constraint = None
+
+        self.action_delete_constraint.setEnabled(self.selected_constraint is not None)
 
     def constraint_tree_accepts_row(self, row: int, parent: QModelIndex) -> bool:
         if not self.constraint_proxy_model:
@@ -330,12 +380,22 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         proxy_model.setSourceModel(model)
 
         room_table.setModel(proxy_model)
+        room_table.selectionModel().selectionChanged.connect(self.room_table_selection_changed)
         room_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         room_table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
         self.room_table = room_table
         self.room_model = model
         self.room_proxy_model = proxy_model
+
+    def room_table_selection_changed(self, selected: QItemSelection, deselected: QItemSelection):
+        if len(selected.indexes()) > 0:
+            proxy_index = selected.indexes()[0]
+            self.selected_room = proxy_index.data()
+        else:
+            self.selected_room = None
+
+        self.action_delete_room.setEnabled(self.selected_room is not None)
 
     # ---------------------------------------------------------------------dd--
     #   Participant table and model setup
@@ -351,10 +411,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         proxy_model.setSourceModel(model)
 
         participant_table.setModel(proxy_model)
+        participant_table.selectionModel().selectionChanged.connect(self.participant_table_selection_changed)
         participant_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         participant_table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
         self.participant_table = participant_table
         self.participant_model = model
         self.participant_proxy_model = proxy_model
+
+    def participant_table_selection_changed(self, selected: QItemSelection, deselected: QItemSelection):
+        if len(selected.indexes()) > 0:
+            proxy_index = selected.indexes()[0]
+            self.selected_participant = proxy_index.data()
+        else:
+            self.selected_participant = None
+
+        self.action_delete_participant.setEnabled(self.selected_participant is not None)
+        self.action_create_constraint.setEnabled(self.selected_participant is not None)
 

@@ -50,4 +50,9 @@ class RoomModel(QAbstractTableModel):
         return len(room_example.keys())
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
-        return Qt.ItemIsEnabled | Qt.ItemIsEditable
+        flags = Qt.ItemIsEnabled | Qt.ItemIsEditable
+
+        if index.column() == 0:
+            flags |= Qt.ItemIsSelectable
+
+        return flags
