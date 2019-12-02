@@ -35,9 +35,11 @@ class Container:
 
     @staticmethod
     def set_rooms(rooms: dict):
+        Container.rooms = rooms
+
         room_slots = []
         for room in rooms.values():
             for slot in range(0, room["beds"]):
                 room_slots.append(f"{room['name']}_{slot}")
 
-        Container.room_slots = rooms
+        Container.room_slots = room_slots

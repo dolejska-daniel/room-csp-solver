@@ -175,9 +175,6 @@ def custom_participant_requirements(*args, **kwargs) -> bool:
         master_room = participant_rooms[constraint_participant]
         # validate, that all participants are in the same room
         for constraint in constraints:
-            if not constraint["enabled"]:
-                continue
-
             # if not, discard this solution
             if participant_rooms[constraint["participant"]] != master_room:
                 return False

@@ -132,6 +132,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def solve(self):
         # ---------------------------------------------dd--
+        #   VARIABLES UPDATE
+        # ---------------------------------------------dd--
+        Container.set_rooms(self.room_model.rooms)
+        Container.set_participants(self.participant_model.participants)
+        Container.constraints = self.constraint_model.source_data
+
+        print(Container.rooms)
+        print(Container.room_slots)
+        print(Container.participants)
+        print(Container.participants_by_gender)
+        print(Container.constraints)
+
+        # ---------------------------------------------dd--
         #   PROBLEM AND CONSTRAINT DEFINITION
         # ---------------------------------------------dd--
         # p = Problem(solver=RecursiveBacktrackingSolver())
@@ -426,6 +439,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.room_model = model
         self.room_proxy_model = proxy_model
 
+        self.room_table_resize()
+
     def room_table_resize(self):
         for column in range(self.room_model.columnCount(QModelIndex())):
             resize_mode = QtWidgets.QHeaderView.Stretch if column == 0 else QtWidgets.QHeaderView.ResizeToContents
@@ -452,9 +467,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         model = ParticipantModel(participants=Container.participants)
         proxy_model = ParticipantProxyModel(source_model=model)
 
-        # TODO: při nepoužití proxy funguje, pravděpodobně thread poblémy
         participant_table.setModel(proxy_model)
-        # participant_table.setModel(model)
         participant_table.selectionModel().selectionChanged.connect(self.participant_table_selection_changed)
         model.dataChanged.connect(self.participant_table_resize)
         model.layoutChanged.connect(self.participant_table_resize)
@@ -462,6 +475,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.participant_table = participant_table
         self.participant_model = model
         self.participant_proxy_model = proxy_model
+
+        self.participant_table_resize()
 
     def participant_table_resize(self):
         for column in range(self.participant_model.columnCount(QModelIndex())):

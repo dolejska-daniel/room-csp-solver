@@ -1,0 +1,26 @@
+{
+	"rooms": [
+		{
+			"name": "Room 1",
+			"beds": 2,
+			"type": "Camper"
+		}
+	],
+	"participants": [
+		{
+			"name": "Participant 1",
+			"gender": "Male",
+			"type": "Camper"
+		},
+		{
+			"name": "Participant 2",
+			"gender": "Male",
+			"type": "Camper"
+		}
+	],
+	"constraints": {
+		"Participant 1": [
+			"Participant 2"
+		]
+	}
+}

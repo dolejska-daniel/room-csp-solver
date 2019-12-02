@@ -33,6 +33,9 @@ class RoomModel(QAbstractTableModel):
             row: dict = self.rooms[row_key]
             column_key = list(row.keys())[index.column()]
 
+            if column_key == "beds":
+                value = int(value)
+
             self.rooms[row_key][column_key] = value
             self.dataChanged.emit(index, index, [role])
             return True
