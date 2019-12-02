@@ -4,7 +4,7 @@ class Container:
     room_slots: list = []
     participants: dict = {}
     participants_by_gender: dict = {}
-    constraints: dict = {}
+    constraints: list = []
 
     @staticmethod
     def initialize(data: dict):
@@ -17,8 +17,7 @@ class Container:
             Container.set_participants({p["name"]: p for p in participants})
             Container.constraints = constraints
         except KeyError:
-            print("Invalid input JSON.")
-            exit(1)
+            raise RuntimeError("Invalid data object provided.")
 
     @staticmethod
     def set_participants(participants: dict):

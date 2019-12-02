@@ -18,9 +18,16 @@
 			"type": "Camper"
 		}
 	],
-	"constraints": {
-		"Participant 1": [
-			"Participant 2"
-		]
-	}
+	"constraints": [
+		{
+			"participant": "Participant 1",
+			"enabled": true,
+			"constraints": [
+				{
+					"participant": "Participant 2",
+					"enabled": true
+				}
+			]
+		}
+	]
 }

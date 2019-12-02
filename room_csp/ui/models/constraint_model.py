@@ -55,16 +55,16 @@ class ConstraintItem(object):
 
 class ConstraintModel(QAbstractItemModel):
     constraint_root: ConstraintItem = None
-    source_data: dict = None
+    source_data: list = None
 
-    def __init__(self, *args, constraints: dict = None, **kwargs):
+    def __init__(self, *args, constraints: list = None, **kwargs):
         super(ConstraintModel, self).__init__(*args, **kwargs)
         self.reload_data(constraints)
 
         self.layoutChanged.connect(self.update_source)
         self.dataChanged.connect(self.update_source)
 
-    def reload_data(self, source_data: dict):
+    def reload_data(self, source_data: list):
         self.source_data = source_data
         self.source_to_tree()
 
@@ -90,47 +90,60 @@ class ConstraintModel(QAbstractItemModel):
         self.dataChanged.emit(index, index, [])
 
     def get_search_strings(self) -> [str]:
-        return list(self.source_data.keys())
+        return [p["participant"] for p in self.source_data]
 
     def source_to_tree(self):
         self.beginResetModel()
 
         if self.constraint_root is None:
-            self.constraint_root = ConstraintItem({"participant": "Participant", "enabled": "Enabled"})
+            self.constraint_root = ConstraintItem({"participant": "Participant name", "enabled": "Enabled"})
         else:
             self.constraint_root.children = []
 
-        for participant, target_participants in self.source_data.items():
-            source_constraint = ConstraintItem({"participant": participant}, parent=self.constraint_root)
-            for target_participant in target_participants:
-                ConstraintItem({"participant": target_participant}, parent=source_constraint)
+        for source_participant in self.source_data:
+            source_constraint = ConstraintItem({
+                "participant": source_participant["participant"],
+                "enabled": source_participant["enabled"],
+            }, parent=self.constraint_root)
+            for target_participant in source_participant["constraints"]:
+                ConstraintItem({
+                    "participant": target_participant["participant"],
+                    "enabled": target_participant["enabled"],
+                }, parent=source_constraint)
 
         self.endResetModel()
         self.layoutChanged.emit()
 
-    def tree_to_source(self, output: dict = None):
-        for participant_constraints in self.constraint_root.children:
-            participant_constraints: ConstraintItem
-            data = list(participant_constraints.data.values())
-
-            participant = data[0]
-            output[participant] = []
-            for constraint in participant_constraints.children:
-                output[participant].append(constraint.data)
+    def tree_to_source(self):
+        return [
+            {
+                "participant": source_participant.get_column(0),
+                "enabled": source_participant.get_column(1),
+                "constraints": [
+                    {
+                        "participant": target_participant.get_column(0),
+                        "enabled": target_participant.get_column(1),
+                    }
+                    for target_participant in source_participant.children
+                ]
+            }
+            for source_participant in self.constraint_root.children
+        ]
 
     def get_data_for_solver(self) -> dict:
-        # TODO: Fix creation of data for solver
         return {
-            source_participant: [
-                target_participant
-                for target_participant in constraints
+            source_participant["participant"]: [
+                target_participant["participant"]
+                for target_participant in source_participant["constraints"]
+                if target_participant["enabled"]
             ]
-            for source_participant, constraints in self.source_data.items()
+            for source_participant in self.source_data
+            if source_participant["enabled"]
         }
 
     def update_source(self):
         self.source_data.clear()
-        self.tree_to_source(self.source_data)
+        self.source_data = self.tree_to_source()
 
     def data(self, index: QModelIndex, role: int = ...) -> typing.Any:
         if not index.isValid():
