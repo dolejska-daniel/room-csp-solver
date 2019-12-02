@@ -22,6 +22,9 @@ class ParticipantModel(QAbstractTableModel):
     def get_search_strings(self) -> [str]:
         return list(self.participants.keys())
 
+    def get_data_for_solver(self) -> dict:
+        return self.participants
+
     def data(self, index: QModelIndex, role: int = ...) -> typing.Any:
         if role == Qt.DisplayRole:
             value: dict = list(self.participants.values())[index.row()]

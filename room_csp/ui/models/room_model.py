@@ -19,6 +19,9 @@ class RoomModel(QAbstractTableModel):
         self.rooms[key] = data
         self.layoutChanged.emit()
 
+    def get_data_for_solver(self) -> dict:
+        return self.rooms
+
     def data(self, index: QModelIndex, role: int = ...) -> typing.Any:
         if role == Qt.DisplayRole:
             value: dict = list(self.rooms.values())[index.row()]

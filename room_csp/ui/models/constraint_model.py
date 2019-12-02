@@ -118,6 +118,16 @@ class ConstraintModel(QAbstractItemModel):
             for constraint in participant_constraints.children:
                 output[participant].append(constraint.data)
 
+    def get_data_for_solver(self) -> dict:
+        # TODO: Fix creation of data for solver
+        return {
+            source_participant: [
+                target_participant
+                for target_participant in constraints
+            ]
+            for source_participant, constraints in self.source_data.items()
+        }
+
     def update_source(self):
         self.source_data.clear()
         self.tree_to_source(self.source_data)

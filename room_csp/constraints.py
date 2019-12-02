@@ -97,7 +97,6 @@ class SameRoomSameGenders(Constraint):
         forwardcheck=False,
         _unassigned=Unassigned,
     ):
-        # print(variables, domains, assignments)
         room_gender = {room['name']: None for room in Container.rooms.values()}
 
         for room_slot in room_slots:
@@ -169,14 +168,14 @@ def custom_participant_requirements(*args, **kwargs) -> bool:
         participant_rooms[participant] = participant_room
 
     # go over all defined constraints
-    for constraint_participant, constraints in Container.constraints.items():
+    for source_participant, constraints in Container.constraints.items():
         constraints: list
         # select first room as master room
-        master_room = participant_rooms[constraint_participant]
+        master_room = participant_rooms[source_participant]
         # validate, that all participants are in the same room
-        for constraint in constraints:
+        for target_participant in constraints:
             # if not, discard this solution
-            if participant_rooms[constraint["participant"]] != master_room:
+            if participant_rooms[target_participant] != master_room:
                 return False
 
     # everything is ok

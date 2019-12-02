@@ -134,15 +134,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # ---------------------------------------------dd--
         #   VARIABLES UPDATE
         # ---------------------------------------------dd--
-        Container.set_rooms(self.room_model.rooms)
-        Container.set_participants(self.participant_model.participants)
-        Container.constraints = self.constraint_model.source_data
-
-        print(Container.rooms)
-        print(Container.room_slots)
-        print(Container.participants)
-        print(Container.participants_by_gender)
-        print(Container.constraints)
+        Container.set_rooms(self.room_model.get_data_for_solver())
+        Container.set_participants(self.participant_model.get_data_for_solver())
+        Container.constraints = self.constraint_model.get_data_for_solver()
 
         # ---------------------------------------------dd--
         #   PROBLEM AND CONSTRAINT DEFINITION
@@ -314,6 +308,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # clear current selection
             self.constraint_tree.selectionModel().clear()
 
+            match = False
             for row in range(0, self.constraint_proxy_model.rowCount()):
                 # create corresponding proxy index
                 index = self.constraint_proxy_model.index(row, 0)
@@ -400,6 +395,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.constraint_tree = constraint_tree
         self.constraint_model = model
         self.constraint_proxy_model = proxy_model
+
+        self.constraint_tree_resize()
 
     def constraint_tree_resize(self):
         for column in range(self.room_model.columnCount(QModelIndex())):
