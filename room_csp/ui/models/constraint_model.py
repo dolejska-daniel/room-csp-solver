@@ -45,7 +45,8 @@ class ConstraintItem(object):
 
     def get_column(self, column):
         try:
-            return list(self.data.values())[column]
+            data = list(self.data.values())
+            return data[column]
         except (IndexError, KeyError):
             return None
 
@@ -73,13 +74,27 @@ class ConstraintModel(QAbstractItemModel):
             return
 
         if parent is None:
-            if value not in self.source_data:
-                self.source_data[value] = []
+            if value not in self.get_search_strings():
+                self.source_data.append({
+                    "participant": value,
+                    "enabled": True,
+                    "constraints": []
+                })
 
         else:
-            if parent not in self.source_data:
-                self.source_data[parent] = []
-            self.source_data[parent].append(value)
+            if parent not in self.get_search_strings():
+                self.source_data.append({
+                    "participant": value,
+                    "enabled": True,
+                    "constraints": []
+                })
+
+            index = self.get_search_strings().index(parent)
+            self.source_data[index]["constraints"].append({
+                "participant": value,
+                "enabled": True,
+                "constraints": []
+            })
 
         self.source_to_tree()
 
