@@ -1,10 +1,14 @@
+import json
+
 from constraint import Problem, FunctionConstraint
 
 from room_csp import *
 
-from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtWidgets import QAction, QMenu
+from PyQt5.QtCore import pyqtSlot, QSortFilterProxyModel, QRegExp, Qt
+from PyQt5.QtWidgets import QAction, QMenu, QTableView, QLineEdit, QFileDialog
 from PyQt5.uic import loadUiType
+
+from room_csp.ui.models import GenericTableModel
 
 qt_creator_file = "ui/main_window.ui"
 Ui_MainWindow, QMainWindow = loadUiType(qt_creator_file)
@@ -12,6 +16,9 @@ Ui_MainWindow, QMainWindow = loadUiType(qt_creator_file)
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     """ Main program window. """
+
+    participant_model: GenericTableModel = None
+    participant_proxy: QSortFilterProxyModel = None
 
     # ==========================================================================dd==
     #   WINDOW INITIALIZATION
@@ -78,7 +85,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_load_all(self):
-        pass
+        filepath, _ = QFileDialog.getOpenFileName(self, "Open file", filter="JSON File (*.json)")
+        if filepath:
+            with open(filepath, 'r') as fp:
+                data = json.load(fp)
+                self.participant_model.set_dataset(data["participants"])
 
     @pyqtSlot()
     def on_load_participants(self):
@@ -102,7 +113,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_focus_participant_search(self):
-        self.close()
+        field: QLineEdit = self.findChild(QLineEdit, "ParticipantSearch")
+        field.setFocus()
 
     @pyqtSlot()
     def on_focus_constraint_search(self):
@@ -150,6 +162,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_solve(self):
+        # TODO: Get data from models to Container
+
         p = Problem()
         # variables are room slots, doman is participant list (with '_' as noone)
         p.addVariables(Container.room_slots, list(Container.participants.keys()) + ["_"])
@@ -178,7 +192,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ------------------------------------------------------dd--
 
     def setup_participant_widgets(self):
-        pass
+        self.setup_participant_table()
+        self.setup_participant_search()
+
+    def setup_participant_table(self):
+        table: QTableView = self.findChild(QTableView, "ParticipantTable")
+
+        # initialize source model
+        self.participant_model = GenericTableModel(self)
+        # initialize proxy model
+        self.participant_proxy = QSortFilterProxyModel(self)
+        self.participant_proxy.setSourceModel(self.participant_model)
+        self.participant_proxy.setDynamicSortFilter(True)
+
+        # set proxy as table source model
+        table.setModel(self.participant_proxy)
+
+    def setup_participant_search(self):
+        field: QLineEdit = self.findChild(QLineEdit, "ParticipantSearch")
+        field.textChanged.connect(self.on_participant_search)
+
+    @pyqtSlot()
+    def on_participant_search(self):
+        field: QLineEdit = self.findChild(QLineEdit, "ParticipantSearch")
+
+        search_string = field.text()
+        search_string = search_string.replace(" ", ".*")
+        search_string = ".*" + search_string + ".*"
+
+        self.participant_proxy.setFilterRegExp(QRegExp(search_string, Qt.CaseInsensitive))
 
     # ------------------------------------------------------dd--
     #   Constraint widgets

@@ -1,0 +1,81 @@
+import typing
+
+from PyQt5.QtCore import Qt, QModelIndex, QVariant, QAbstractTableModel
+
+
+class GenericTableModel(QAbstractTableModel):
+    header: list = None
+    dataset: list = None
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.header = []
+        self.dataset = []
+
+    # ------------------------------------------------------dd--
+    #   Custom methods
+    # ------------------------------------------------------dd--
+
+    def set_dataset(self, dataset: list):
+        if not len(dataset):
+            return
+
+        self.layoutAboutToBeChanged.emit()
+
+        self.header = list(dataset[0].keys())
+        self.dataset = dataset
+
+        self.changePersistentIndexList(self.persistentIndexList(), self.persistentIndexList())
+        self.layoutChanged.emit()
+
+    # ------------------------------------------------------dd--
+    #   Header
+    # ------------------------------------------------------dd--
+
+    def columnCount(self, parent: QModelIndex = ...) -> int:
+        """ Returns the number of columns for the children of the given parent. """
+
+        return len(self.header)
+
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...) -> typing.Any:
+        """ Returns the data for the given role and section in the header with the specified orientation.
+
+        For horizontal headers, the section number corresponds to the column number.
+        Similarly, for vertical headers, the section number corresponds to the row number.
+        """
+
+        if orientation == Qt.Horizontal:
+            if role == Qt.DisplayRole:
+                return self.header[section]
+
+        return QVariant()
+
+    # ------------------------------------------------------dd--
+    #   Rows
+    # ------------------------------------------------------dd--
+
+    def rowCount(self, parent: QModelIndex = ...) -> int:
+        """ Returns the number of rows under the given parent.
+
+        When the parent is valid it means that rowCount is returning the number of children of parent.
+        """
+
+        return len(self.dataset)
+
+    def data(self, index: QModelIndex, role: int = ...) -> typing.Any:
+        """ Returns the data stored under the given role for the item referred to by the index. """
+        if not index.isValid():
+            return QVariant()
+
+        if role == Qt.DisplayRole:
+            row_data = self.dataset[index.row()]
+            row_data = list(row_data.values())
+            return row_data[index.column()]
+
+        return QVariant()
+
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+        """ Returns the item flags for the given index. """
+
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
