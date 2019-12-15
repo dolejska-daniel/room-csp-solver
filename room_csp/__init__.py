@@ -1,5 +1,5 @@
-from .constraints import custom_participant_requirements, \
-    SameRoomSameGenders, UniquelyAssignedParticipants, AllParticipantsAssigned
+from .constraints import custom_participant_requirements, SameRoomSameGenders, UniquelyAssignedParticipants, \
+    AllParticipantsAssigned
 from .container import Container
 
 __all__ = [

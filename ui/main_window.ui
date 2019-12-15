@@ -143,7 +143,6 @@
      <string>File</string>
     </property>
     <addaction name="actionLoad"/>
-    <addaction name="separator"/>
     <addaction name="actionLoadParticipants"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>
