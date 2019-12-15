@@ -409,7 +409,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_constraint_model_changed(self):
-        print("data changed!")
         tree: QTreeView = self.findChild(QTreeView, "ConstraintsTree")
         # TODO: Resize tree columns to fit contents
 

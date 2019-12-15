@@ -12,6 +12,9 @@ class Container:
     @staticmethod
     def set_participants(participants: list):
         """ Saves defined participants and creates helper lists. """
+        if not len(participants):
+            return
+
         Container.participants = {
             p["name"]: p
             for p in participants
@@ -32,6 +35,9 @@ class Container:
     @staticmethod
     def set_rooms(rooms: list):
         """ Saves defined rooms and generates corresponding number of room slots. """
+        if not len(rooms):
+            return
+
         Container.rooms = {
             r["name"]: r
             for r in rooms
@@ -50,6 +56,9 @@ class Container:
     @staticmethod
     def set_constraints(constraints: dict):
         """ Saves defined participant constraints. """
+        if not len(constraints):
+            return
+
         Container.constraints = {
             constraint["name"]: [
                 participant["name"]
