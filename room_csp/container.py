@@ -1,44 +1,59 @@
-
 class Container:
+    """ Data holder for CSP solver. """
+
     rooms: dict = {}
     room_slots: list = []
+
     participants: dict = {}
     participants_by_gender: dict = {}
-    constraints: list = []
+
+    constraints: dict = {}
 
     @staticmethod
-    def initialize(data: dict):
-        try:
-            rooms = data["rooms"]
-            participants = data["participants"]
-            constraints = data["constraints"]
+    def set_participants(participants: list):
+        """ Saves defined participants and creates helper lists. """
+        Container.participants = {
+            p["name"]: p
+            for p in participants
+        }
 
-            Container.set_rooms({r["name"]: r for r in rooms})
-            Container.set_participants({p["name"]: p for p in participants})
-            Container.constraints = constraints
-        except KeyError:
-            raise RuntimeError("Invalid data object provided.")
-
-    @staticmethod
-    def set_participants(participants: dict):
-        Container.participants = participants
-
-        genders = {p["gender"] for p in participants.values()}
+        # create a set of existing genders
+        genders = {p["gender"] for p in participants}
+        # assign participants to given gender groups
         Container.participants_by_gender = {
-            gender: {p for p, pdata in participants.items() if pdata["gender"] == gender}
+            gender: {p["name"] for p in participants if p["gender"] == gender}
             for gender in genders
         }
 
+        # add 'noone' to each gender group
         for data in Container.participants_by_gender.values():
             data.add('_')
 
     @staticmethod
-    def set_rooms(rooms: dict):
-        Container.rooms = rooms
+    def set_rooms(rooms: list):
+        """ Saves defined rooms and generates corresponding number of room slots. """
+        Container.rooms = {
+            r["name"]: r
+            for r in rooms
+        }
 
         room_slots = []
-        for room in rooms.values():
+        # for each room
+        for room in rooms:
+            # based on its size
             for slot in range(0, room["beds"]):
+                # create slot
                 room_slots.append(f"{room['name']}_{slot}")
 
         Container.room_slots = room_slots
+
+    @staticmethod
+    def set_constraints(constraints: dict):
+        """ Saves defined participant constraints. """
+        Container.constraints = {
+            constraint["participant"]: [
+                participant["participant"]
+                for participant in constraint["constraints"]
+            ]
+            for constraint in constraints
+        }

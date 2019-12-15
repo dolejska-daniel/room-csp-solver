@@ -20,7 +20,7 @@ class AllParticipantsAssigned(Constraint):
                 return True
 
         unassigned_participants = set(Container.participants.keys())
-        # validate that for each room slot
+        # validate, that for each room slot
         for room_slot in room_slots:
             # assigned participant of that slot
             participant = assignments.get(room_slot, _unassigned)
@@ -97,7 +97,7 @@ class SameRoomSameGenders(Constraint):
         forwardcheck=False,
         _unassigned=Unassigned,
     ):
-        room_gender = {room['name']: None for room in Container.rooms.values()}
+        room_gender = {room_name: None for room_name in Container.rooms.keys()}
 
         for room_slot in room_slots:
             # get current slot assignment
@@ -155,7 +155,7 @@ class SameRoomSameGenders(Constraint):
 def custom_participant_requirements(*args, **kwargs) -> bool:
     """ Ensures that all participant's requirements are met. """
     # variable for current status aggregation
-    participant_rooms = {p: None for p in Container.participants.keys()}
+    participant_rooms = {participant_name: None for participant_name in Container.participants.keys()}
     # map selected participants to assigned room slots
     for room_slot, participant in zip(Container.room_slots, args):
         # there is no need to validate room slots of "noone"
