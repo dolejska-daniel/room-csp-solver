@@ -1,16 +1,60 @@
 {
 	"rooms": [
-		{ "name": "Room 5", "beds": 8 },
-		{ "name": "Room 6", "beds": 7 },
-		{ "name": "Room 7", "beds": 8 },
-		{ "name": "Room 8", "beds": 5 },
-		{ "name": "Room 9", "beds": 5 },
-		{ "name": "Room 10", "beds": 5 },
-		{ "name": "Room 11", "beds": 4 },
-		{ "name": "Room 12", "beds": 2 },
-		{ "name": "Room 13", "beds": 3 },
-		{ "name": "LA", "beds": 8 },
-		{ "name": "RA", "beds": 8 }
+		{
+			"name": "Room 5",
+			"beds": 8,
+			"type": "Camper"
+		},
+		{
+			"name": "Room 6",
+			"beds": 7,
+			"type": "Camper"
+		},
+		{
+			"name": "Room 7",
+			"beds": 8,
+			"type": "Camper"
+		},
+		{
+			"name": "Room 8",
+			"beds": 5,
+			"type": "Camper"
+		},
+		{
+			"name": "Room 9",
+			"beds": 5,
+			"type": "Camper"
+		},
+		{
+			"name": "Room 10",
+			"beds": 5,
+			"type": "Camper"
+		},
+		{
+			"name": "Room 11",
+			"beds": 4,
+			"type": "Counselor"
+		},
+		{
+			"name": "Room 12",
+			"beds": 2,
+			"type": "Counselor"
+		},
+		{
+			"name": "Room 13",
+			"beds": 3,
+			"type": "Counselor"
+		},
+		{
+			"name": "LA",
+			"beds": 8,
+			"type": "Camper"
+		},
+		{
+			"name": "RA",
+			"beds": 8,
+			"type": "Camper"
+		}
 	],
 	"participants": [],
 	"constraints": {}

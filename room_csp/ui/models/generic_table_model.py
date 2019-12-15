@@ -1,9 +1,12 @@
+import copy
 import typing
 
-from PyQt5.QtCore import Qt, QModelIndex, QVariant, QAbstractTableModel
+from PyQt5.QtCore import Qt, QModelIndex, QVariant, QAbstractTableModel, pyqtSignal
 
 
 class GenericTableModel(QAbstractTableModel):
+    layoutChanged: pyqtSignal
+
     header: list = None
     dataset: list = None
 
@@ -28,6 +31,9 @@ class GenericTableModel(QAbstractTableModel):
 
         self.changePersistentIndexList(self.persistentIndexList(), self.persistentIndexList())
         self.layoutChanged.emit()
+
+    def get_dataset(self) -> list:
+        return copy.deepcopy(self.dataset)
 
     # ------------------------------------------------------dd--
     #   Header

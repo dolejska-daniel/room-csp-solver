@@ -5,10 +5,11 @@ from constraint import Problem, FunctionConstraint
 from room_csp import *
 
 from PyQt5.QtCore import pyqtSlot, QSortFilterProxyModel, QRegExp, Qt
-from PyQt5.QtWidgets import QAction, QMenu, QTableView, QLineEdit, QFileDialog, QHeaderView
+from PyQt5.QtWidgets import QAction, QMenu, QTableView, QLineEdit, QFileDialog, QHeaderView, QTreeView
 from PyQt5.uic import loadUiType
 
 from room_csp.ui.models import GenericTableModel
+from room_csp.ui.models.generic_tree_model import GenericTreeModel
 
 qt_creator_file = "ui/main_window.ui"
 Ui_MainWindow, QMainWindow = loadUiType(qt_creator_file)
@@ -19,6 +20,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     participant_model: GenericTableModel = None
     participant_proxy: QSortFilterProxyModel = None
+
+    constraint_model: GenericTreeModel = None
+    constraint_proxy: QSortFilterProxyModel = None
 
     room_model: GenericTableModel = None
     room_proxy: QSortFilterProxyModel = None
@@ -94,6 +98,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 data = json.load(fp)
                 self.participant_model.set_dataset(data["participants"])
                 self.room_model.set_dataset(data["rooms"])
+                self.constraint_model.set_dataset(data["constraints"])
 
     @pyqtSlot()
     def on_load_participants(self):
@@ -202,6 +207,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         proxy.setSourceModel(model)
         proxy.setDynamicSortFilter(True)
 
+    def setup_tree_models(self, model: GenericTreeModel, proxy: QSortFilterProxyModel, on_change_slot: pyqtSlot):
+        model.dataChanged.connect(on_change_slot)
+        model.layoutChanged.connect(on_change_slot)
+
+        proxy.setSourceModel(model)
+        proxy.setDynamicSortFilter(True)
+
     # ------------------------------------------------------dd--
     #   Participant widgets
     # ------------------------------------------------------dd--
@@ -232,6 +244,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         table: QTableView = self.findChild(QTableView, "ParticipantTable")
         table.horizontalHeader().setStretchLastSection(True)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     @pyqtSlot()
     def on_participant_search(self):
@@ -248,7 +261,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ------------------------------------------------------dd--
 
     def setup_constraint_widgets(self):
-        pass
+        tree: QTreeView = self.findChild(QTreeView, "ConstraintsTree")
+
+        # initialize source model
+        self.constraint_model = GenericTreeModel(self)
+        # initialize proxy model
+        self.constraint_proxy = QSortFilterProxyModel(self)
+        # setup these models accordingly
+        self.setup_tree_models(self.constraint_model, self.constraint_proxy, self.on_constraint_model_changed)
+
+        tree.setModel(self.constraint_model)
+
+    @pyqtSlot()
+    def on_constraint_model_changed(self):
+        tree: QTreeView = self.findChild(QTreeView, "ConstraintsTree")
+        # TODO: Resize tree columns to fit contents
+
+        tree.expandAll()
 
     # ------------------------------------------------------dd--
     #   Room widgets
@@ -272,6 +301,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         table: QTableView = self.findChild(QTableView, "RoomTable")
         table.horizontalHeader().setStretchLastSection(True)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
     # ------------------------------------------------------dd--
     #   Solution widgets

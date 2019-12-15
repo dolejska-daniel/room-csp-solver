@@ -20,11 +20,11 @@
 	],
 	"constraints": [
 		{
-			"participant": "Participant 1",
+			"name": "Participant 1",
 			"enabled": true,
-			"constraints": [
+			"_items": [
 				{
-					"participant": "Participant 2",
+					"name": "Participant 2",
 					"enabled": true
 				}
 			]
