@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QModelIndex
 from PyQt5.QtGui import QStandardItemModel
 
 from room_csp.ui.models import GenericItem
@@ -80,3 +80,13 @@ class GenericTreeModel(QStandardItemModel):
             items[0].appendRow(self.create_item_row(sub_data))
 
         return items
+
+    def add_item(self, data: dict, parent_index: QModelIndex = QModelIndex()):
+        parent = self.invisibleRootItem()
+        if parent_index.isValid():
+            parent = self.itemFromIndex(parent_index)
+
+        parent.appendRow(self.create_item_row(data))
+
+    def remove_item(self, index: QModelIndex = ...):
+        self.removeRow(index.row(), index.parent())

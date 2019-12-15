@@ -5,6 +5,8 @@ from PyQt5.QtCore import Qt, QModelIndex, QVariant, QAbstractTableModel, pyqtSig
 
 
 class GenericTableModel(QAbstractTableModel):
+    WholeRowRole = 101
+
     layoutChanged: pyqtSignal
 
     header: list = None
@@ -19,6 +21,9 @@ class GenericTableModel(QAbstractTableModel):
     # ------------------------------------------------------dd--
     #   Custom methods
     # ------------------------------------------------------dd--
+
+    def set_header(self, labels: list):
+        self.header = [label.capitalize() for label in labels]
 
     def set_dataset(self, dataset: list):
         if not len(dataset):
@@ -47,8 +52,10 @@ class GenericTableModel(QAbstractTableModel):
 
         self.endInsertRows()
 
-    def set_header(self, labels: list):
-        self.header = [label.capitalize() for label in labels]
+    def remove_item(self, index: QModelIndex = ...):
+        self.beginRemoveRows(QModelIndex(), index.row(), index.row())
+        del self.dataset[index.row()]
+        self.endRemoveRows()
 
     # ------------------------------------------------------dd--
     #   Header
@@ -93,6 +100,9 @@ class GenericTableModel(QAbstractTableModel):
             row_data = self.dataset[index.row()]
             row_data = list(row_data.values())
             return row_data[index.column()]
+
+        if role == self.WholeRowRole:
+            return self.dataset[index.row()]
 
         return QVariant()
 

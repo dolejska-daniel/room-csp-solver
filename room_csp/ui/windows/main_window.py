@@ -5,7 +5,7 @@ from constraint import Problem, FunctionConstraint
 
 from room_csp import *
 
-from PyQt5.QtCore import pyqtSlot, QSortFilterProxyModel, QRegExp, Qt, pyqtSignal, QModelIndex
+from PyQt5.QtCore import pyqtSlot, QSortFilterProxyModel, QRegExp, Qt, pyqtSignal, QModelIndex, QAbstractItemModel
 from PyQt5.QtWidgets import QAction, QMenu, QTableView, QLineEdit, QFileDialog, QHeaderView, QTreeView, \
     QAbstractItemView, QMessageBox
 from PyQt5.uic import loadUiType
@@ -34,6 +34,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     room_model: GenericTableModel = None
     room_proxy: QSortFilterProxyModel = None
+    room_selection: typing.Union[QModelIndex, None] = None
 
     solution_model: GenericTreeModel = None
 
@@ -163,6 +164,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.participant_selection is None:
             return
 
+        self.participant_model.remove_item(self.participant_selection)
+
     # ------------------------------------------------------dd--
     #   Category: Room
     # ------------------------------------------------------dd--
@@ -179,7 +182,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_delete_room(self):
-        pass
+        if self.room_selection is None:
+            return
+
+        self.room_model.remove_item(self.room_selection)
 
     # ------------------------------------------------------dd--
     #   Category: Constraint
@@ -187,11 +193,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_create_constraint(self):
-        pass
+        if self.participant_selection is None:
+            return
+
+        participant_name = self.participant_model.data(self.participant_selection, Qt.DisplayRole)
+        data = {
+            "name": participant_name,
+            "enabled": True,
+        }
+        if self.constraint_selection is None:
+            data["_items"] = []
+            self.constraint_model.add_item(data)
+
+        else:
+            self.constraint_model.add_item(data, self.constraint_selection)
 
     @pyqtSlot()
     def on_delete_constraint(self):
-        pass
+        self.constraint_model.remove_item(self.constraint_selection)
 
     # ------------------------------------------------------dd--
     #   Category: Solution
@@ -265,21 +284,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     #   Generic utility functions
     # ------------------------------------------------------dd--
 
+    def setup_table(self, table: QAbstractItemView, model: QAbstractItemModel,
+                    on_selection_change: typing.Union[pyqtSlot, None]):
+        # set proxy as table source model
+        table.setModel(model)
+
+        # set single selection mode
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
+        # connect selection signal
+        if on_selection_change is not None:
+            table.selectionModel().selectionChanged.connect(on_selection_change)
+
     def setup_table_models(self, model: GenericTableModel, proxy: typing.Union[QSortFilterProxyModel, None],
-                           on_change_slot: pyqtSlot):
-        model.dataChanged.connect(on_change_slot)
-        model.layoutChanged.connect(on_change_slot)
-        self.resized.connect(on_change_slot)
+                           on_data_change: typing.Union[pyqtSlot, None]):
+        if on_data_change is not None:
+            model.dataChanged.connect(on_data_change)
+            model.layoutChanged.connect(on_data_change)
+            self.resized.connect(on_data_change)
 
         if proxy is not None:
             proxy.setSourceModel(model)
             proxy.setDynamicSortFilter(True)
 
     def setup_tree_models(self, model: GenericTreeModel, proxy: typing.Union[QSortFilterProxyModel, None],
-                          on_change_slot: pyqtSlot):
-        model.dataChanged.connect(on_change_slot)
-        model.layoutChanged.connect(on_change_slot)
-        self.resized.connect(on_change_slot)
+                          on_data_change: typing.Union[pyqtSlot, None]):
+        if on_data_change is not None:
+            model.dataChanged.connect(on_data_change)
+            model.layoutChanged.connect(on_data_change)
+            self.resized.connect(on_data_change)
 
         if proxy is not None:
             proxy.setSourceModel(model)
@@ -302,12 +334,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setup_table_models(self.participant_model, self.participant_proxy, self.on_participant_model_changed)
 
         table: QTableView = self.findChild(QTableView, "ParticipantTable")
-        # set proxy as table source model
-        table.setModel(self.participant_proxy)
-        # set single selection mode
-        table.setSelectionMode(QAbstractItemView.SingleSelection)
-        # connect selection signal
-        table.selectionModel().selectionChanged.connect(self.on_participant_selection_changed)
+        # setup general table properties
+        self.setup_table(table, self.participant_proxy, self.on_participant_selection_changed)
 
     def setup_participant_search(self):
         field: QLineEdit = self.findChild(QLineEdit, "ParticipantSearch")
@@ -316,14 +344,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def on_participant_selection_changed(self):
         table: QTableView = self.findChild(QTableView, "ParticipantTable")
-        action: QAction = self.findChild(QAction, "actionCreateConstraintFromSelection")
+        action_create_constraint: QAction = self.findChild(QAction, "actionCreateConstraintFromSelection")
+        action_delete: QAction = self.findChild(QAction, "actionDeleteParticipant")
         indexes = table.selectionModel().selectedIndexes()
         if not len(indexes):
-            action.setEnabled(False)
+            action_create_constraint.setEnabled(False)
+            action_delete.setEnabled(False)
             self.participant_selection = None
             return
 
-        action.setEnabled(True)
+        action_create_constraint.setEnabled(True)
+        action_delete.setEnabled(True)
         self.participant_selection = self.participant_proxy.mapToSource(indexes[0])
 
     @pyqtSlot()
@@ -357,7 +388,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         tree: QTreeView = self.findChild(QTreeView, "ConstraintsTree")
         # set proxy as table source model
-        tree.setModel(self.constraint_model)
+        tree.setModel(self.constraint_proxy)
         # set single selection mode
         tree.setSelectionMode(QAbstractItemView.SingleSelection)
         # connect selection signal
@@ -366,15 +397,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def on_constraint_selection_changed(self):
         tree: QTreeView = self.findChild(QTreeView, "ConstraintsTree")
+        action_delete: QAction = self.findChild(QAction, "actionDeleteConstraint")
         indexes = tree.selectionModel().selectedIndexes()
         if not len(indexes):
+            action_delete.setEnabled(False)
             self.constraint_selection = None
             return
 
+        action_delete.setEnabled(True)
         self.constraint_selection = self.constraint_proxy.mapToSource(indexes[0])
 
     @pyqtSlot()
     def on_constraint_model_changed(self):
+        print("data changed!")
         tree: QTreeView = self.findChild(QTreeView, "ConstraintsTree")
         # TODO: Resize tree columns to fit contents
 
@@ -393,8 +428,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setup_table_models(self.room_model, self.room_proxy, self.on_room_model_changed)
 
         table: QTableView = self.findChild(QTableView, "RoomTable")
-        # set proxy as table source model
-        table.setModel(self.room_proxy)
+        # setup general table properties
+        self.setup_table(table, self.room_proxy, self.on_room_selection_changed)
+
+    @pyqtSlot()
+    def on_room_selection_changed(self):
+        table: QTableView = self.findChild(QTableView, "RoomTable")
+        action_delete: QAction = self.findChild(QAction, "actionDeleteRoom")
+        indexes = table.selectionModel().selectedIndexes()
+        if not len(indexes):
+            action_delete.setEnabled(False)
+            self.room_selection = None
+            return
+
+        action_delete.setEnabled(True)
+        self.room_selection = self.room_proxy.mapToSource(indexes[0])
 
     @pyqtSlot()
     def on_room_model_changed(self):
