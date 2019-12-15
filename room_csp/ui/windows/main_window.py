@@ -19,6 +19,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def __init__(self):
         """ Initializes window UI, connects required signals and sets up other required classes. """
+
         super().__init__()
         self.setupUi(self)
 
@@ -27,8 +28,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # initialize custom ui elements
         self.setup_menu_buttons()
+        self.setup_widgets()
 
     def setup_menu_buttons(self):
+        """ Connects menu action signals to corresponding slot functions. """
+
         # category: file
         self.findChild(QAction, "actionLoad").triggered.connect(self.on_load_all)
         self.findChild(QAction, "actionLoadParticipants").triggered.connect(self.on_load_participants)
@@ -57,6 +61,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # category: options
         pass
+
+    def setup_widgets(self):
+        self.setup_participant_widgets()
+        self.setup_constraint_widgets()
+        self.setup_room_widgets()
+        self.setup_solution_widgets()
 
     # ==========================================================================dd==
     #   MENU SLOT FUNCTIONS
@@ -140,7 +150,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_solve(self):
-        # p = Problem(solver=RecursiveBacktrackingSolver())
         p = Problem()
         # variables are room slots, doman is participant list (with '_' as noone)
         p.addVariables(Container.room_slots, list(Container.participants.keys()) + ["_"])
@@ -159,3 +168,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # ---------------------------------------------dd--
         solution_data = p.getSolution()
         print(solution_data)
+
+    # ==========================================================================dd==
+    #   WIDGET MODEL SETUP
+    # ==========================================================================dd==
+
+    # ------------------------------------------------------dd--
+    #   Participant widgets
+    # ------------------------------------------------------dd--
+
+    def setup_participant_widgets(self):
+        pass
+
+    # ------------------------------------------------------dd--
+    #   Constraint widgets
+    # ------------------------------------------------------dd--
+
+    def setup_constraint_widgets(self):
+        pass
+
+    # ------------------------------------------------------dd--
+    #   Room widgets
+    # ------------------------------------------------------dd--
+
+    def setup_room_widgets(self):
+        pass
+
+    # ------------------------------------------------------dd--
+    #   Solution widgets
+    # ------------------------------------------------------dd--
+
+    def setup_solution_widgets(self):
+        pass
