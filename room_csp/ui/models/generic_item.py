@@ -8,7 +8,7 @@ class GenericItem(QStandardItem):
 
     SaveRole = 101
 
-    def __init__(self, key: str, value: typing.Any):
+    def __init__(self, key: str = None, value: typing.Any = None):
         super().__init__()
 
         self.key = key

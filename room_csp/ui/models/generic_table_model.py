@@ -26,7 +26,7 @@ class GenericTableModel(QAbstractTableModel):
 
         self.layoutAboutToBeChanged.emit()
 
-        self.header = list(dataset[0].keys())
+        self.set_header(list(dataset[0].keys()))
         self.dataset = dataset
 
         self.changePersistentIndexList(self.persistentIndexList(), self.persistentIndexList())
@@ -34,6 +34,21 @@ class GenericTableModel(QAbstractTableModel):
 
     def get_dataset(self) -> list:
         return copy.deepcopy(self.dataset)
+
+    def add_item(self, item: dict):
+        self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
+
+        if not len(self.dataset):
+            self.layoutAboutToBeChanged.emit()
+            self.set_header(list(item.keys()))
+            self.layoutChanged.emit()
+
+        self.dataset.append(item)
+
+        self.endInsertRows()
+
+    def set_header(self, labels: list):
+        self.header = [label.capitalize() for label in labels]
 
     # ------------------------------------------------------dd--
     #   Header

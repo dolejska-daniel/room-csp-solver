@@ -1,5 +1,5 @@
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
+from PyQt5.QtGui import QStandardItemModel
 
 from room_csp.ui.models import GenericItem
 
@@ -23,6 +23,7 @@ class GenericTreeModel(QStandardItemModel):
         self.layoutAboutToBeChanged.emit()
 
         parent = self.invisibleRootItem()
+        parent.removeRows(0, parent.rowCount())
         for entry in dataset:
             row = self.create_item_row(entry)
             parent.appendRow(row)

@@ -21,7 +21,7 @@ class CreateRoomDialog(QCreateRoomDialog, Ui_CreateRoomDialog):
         room_size: QSpinBox = self.findChild(QSpinBox, "RoomSize")
         room_type: QComboBox = self.findChild(QComboBox, "RoomType")
 
-        self.send_room_data.emit({
+        self.room_data_sent.emit({
             "name": room_name.text(),
             "beds": room_size.value(),
             "type": room_type.currentText()

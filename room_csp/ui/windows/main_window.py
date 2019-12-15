@@ -1,15 +1,20 @@
 import json
+import typing
 
 from constraint import Problem, FunctionConstraint
 
 from room_csp import *
 
-from PyQt5.QtCore import pyqtSlot, QSortFilterProxyModel, QRegExp, Qt
-from PyQt5.QtWidgets import QAction, QMenu, QTableView, QLineEdit, QFileDialog, QHeaderView, QTreeView
+from PyQt5.QtCore import pyqtSlot, QSortFilterProxyModel, QRegExp, Qt, pyqtSignal, QModelIndex
+from PyQt5.QtWidgets import QAction, QMenu, QTableView, QLineEdit, QFileDialog, QHeaderView, QTreeView, \
+    QAbstractItemView, QMessageBox
 from PyQt5.uic import loadUiType
 
 from room_csp.ui.models import GenericTableModel
 from room_csp.ui.models.generic_tree_model import GenericTreeModel
+
+from .create_room_dialog import CreateRoomDialog
+from .create_participant_dialog import CreateParticipantDialog
 
 qt_creator_file = "ui/main_window.ui"
 Ui_MainWindow, QMainWindow = loadUiType(qt_creator_file)
@@ -17,15 +22,20 @@ Ui_MainWindow, QMainWindow = loadUiType(qt_creator_file)
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     """ Main program window. """
+    resized = pyqtSignal()
 
     participant_model: GenericTableModel = None
     participant_proxy: QSortFilterProxyModel = None
+    participant_selection: typing.Union[QModelIndex, None] = None
 
     constraint_model: GenericTreeModel = None
     constraint_proxy: QSortFilterProxyModel = None
+    constraint_selection: typing.Union[QModelIndex, None] = None
 
     room_model: GenericTableModel = None
     room_proxy: QSortFilterProxyModel = None
+
+    solution_model: GenericTreeModel = None
 
     # ==========================================================================dd==
     #   WINDOW INITIALIZATION
@@ -64,6 +74,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.findChild(QAction, "actionDeleteParticipant").triggered.connect(self.on_delete_participant)
 
         # category: room
+        self.findChild(QAction, "actionCreateRoom").triggered.connect(self.on_create_room)
         self.findChild(QAction, "actionDeleteRoom").triggered.connect(self.on_delete_room)
 
         # category: constraint
@@ -81,6 +92,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setup_constraint_widgets()
         self.setup_room_widgets()
         self.setup_solution_widgets()
+
+    def resizeEvent(self, _):
+        self.resized.emit()
 
     # ==========================================================================dd==
     #   MENU SLOT FUNCTIONS
@@ -127,7 +141,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_focus_constraint_search(self):
-        self.close()
+        field: QLineEdit = self.findChild(QLineEdit, "ConstraintSearch")
+        field.setFocus()
 
     # ------------------------------------------------------dd--
     #   Category: Participant
@@ -135,11 +150,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_create_participant(self):
-        pass
+        dialog = CreateParticipantDialog(self)
+        dialog.participant_data_sent.connect(self.on_create_participant_data)
+        dialog.exec_()
+
+    @pyqtSlot(dict)
+    def on_create_participant_data(self, data: dict):
+        self.participant_model.add_item(data)
 
     @pyqtSlot()
     def on_delete_participant(self):
-        pass
+        if self.participant_selection is None:
+            return
 
     # ------------------------------------------------------dd--
     #   Category: Room
@@ -147,7 +169,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_create_room(self):
-        pass
+        dialog = CreateRoomDialog(self)
+        dialog.room_data_sent.connect(self.on_create_room_data)
+        dialog.exec_()
+
+    @pyqtSlot(dict)
+    def on_create_room_data(self, data: dict):
+        self.room_model.add_item(data)
 
     @pyqtSlot()
     def on_delete_room(self):
@@ -171,7 +199,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_solve(self):
-        # TODO: Get data from models to Container
+        Container.set_rooms(self.room_model.get_dataset())
+        Container.set_participants(self.participant_model.get_dataset())
+        Container.set_constraints(self.constraint_model.get_dataset())
+
+        if not len(Container.rooms) or not len(Container.participants):
+            message = QMessageBox(self)
+            message.setIcon(QMessageBox.Warning)
+            message.setWindowTitle("Required data missing!")
+            message.setText("No rooms or participants were defined!\nPlease add rooms and/or participants to continue.")
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec_()
+            return
 
         p = Problem()
         # variables are room slots, doman is participant list (with '_' as noone)
@@ -189,8 +228,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # ---------------------------------------------dd--
         #   PROBLEM SOLUTION
         # ---------------------------------------------dd--
+        solution = {}
         solution_data = p.getSolution()
+        if not len(solution_data):
+            message = QMessageBox(self)
+            message.setIcon(QMessageBox.Critical)
+            message.setWindowTitle("No solution found!")
+            message.setText(
+                "Current problem definition does not have any solutions!\n"
+                "Consider disabling constraints and check that there is enough room for all the participants."
+            )
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec_()
+            return
+
+        for room_slot, participant_name in solution_data.items():
+            room = room_slot.split("_")[0]
+            if room not in solution:
+                solution[room] = {
+                    "name": room,
+                    "_items": [],
+                }
+
+            solution[room]["_items"].append({
+                "name": participant_name
+            })
+
         print(solution_data)
+        self.solution_model.set_dataset(list(solution.values()))
 
     # ==========================================================================dd==
     #   WIDGET MODEL SETUP
@@ -200,19 +265,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     #   Generic utility functions
     # ------------------------------------------------------dd--
 
-    def setup_table_models(self, model: GenericTableModel, proxy: QSortFilterProxyModel, on_change_slot: pyqtSlot):
+    def setup_table_models(self, model: GenericTableModel, proxy: typing.Union[QSortFilterProxyModel, None],
+                           on_change_slot: pyqtSlot):
         model.dataChanged.connect(on_change_slot)
         model.layoutChanged.connect(on_change_slot)
+        self.resized.connect(on_change_slot)
 
-        proxy.setSourceModel(model)
-        proxy.setDynamicSortFilter(True)
+        if proxy is not None:
+            proxy.setSourceModel(model)
+            proxy.setDynamicSortFilter(True)
 
-    def setup_tree_models(self, model: GenericTreeModel, proxy: QSortFilterProxyModel, on_change_slot: pyqtSlot):
+    def setup_tree_models(self, model: GenericTreeModel, proxy: typing.Union[QSortFilterProxyModel, None],
+                          on_change_slot: pyqtSlot):
         model.dataChanged.connect(on_change_slot)
         model.layoutChanged.connect(on_change_slot)
+        self.resized.connect(on_change_slot)
 
-        proxy.setSourceModel(model)
-        proxy.setDynamicSortFilter(True)
+        if proxy is not None:
+            proxy.setSourceModel(model)
+            proxy.setDynamicSortFilter(True)
 
     # ------------------------------------------------------dd--
     #   Participant widgets
@@ -223,8 +294,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setup_participant_search()
 
     def setup_participant_table(self):
-        table: QTableView = self.findChild(QTableView, "ParticipantTable")
-
         # initialize source model
         self.participant_model = GenericTableModel(self)
         # initialize proxy model
@@ -232,12 +301,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # setup these models accordingly
         self.setup_table_models(self.participant_model, self.participant_proxy, self.on_participant_model_changed)
 
+        table: QTableView = self.findChild(QTableView, "ParticipantTable")
         # set proxy as table source model
         table.setModel(self.participant_proxy)
+        # set single selection mode
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
+        # connect selection signal
+        table.selectionModel().selectionChanged.connect(self.on_participant_selection_changed)
 
     def setup_participant_search(self):
         field: QLineEdit = self.findChild(QLineEdit, "ParticipantSearch")
         field.textChanged.connect(self.on_participant_search)
+
+    @pyqtSlot()
+    def on_participant_selection_changed(self):
+        table: QTableView = self.findChild(QTableView, "ParticipantTable")
+        action: QAction = self.findChild(QAction, "actionCreateConstraintFromSelection")
+        indexes = table.selectionModel().selectedIndexes()
+        if not len(indexes):
+            action.setEnabled(False)
+            self.participant_selection = None
+            return
+
+        action.setEnabled(True)
+        self.participant_selection = self.participant_proxy.mapToSource(indexes[0])
 
     @pyqtSlot()
     def on_participant_model_changed(self):
@@ -261,8 +348,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ------------------------------------------------------dd--
 
     def setup_constraint_widgets(self):
-        tree: QTreeView = self.findChild(QTreeView, "ConstraintsTree")
-
         # initialize source model
         self.constraint_model = GenericTreeModel(self)
         # initialize proxy model
@@ -270,7 +355,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # setup these models accordingly
         self.setup_tree_models(self.constraint_model, self.constraint_proxy, self.on_constraint_model_changed)
 
+        tree: QTreeView = self.findChild(QTreeView, "ConstraintsTree")
+        # set proxy as table source model
         tree.setModel(self.constraint_model)
+        # set single selection mode
+        tree.setSelectionMode(QAbstractItemView.SingleSelection)
+        # connect selection signal
+        tree.selectionModel().selectionChanged.connect(self.on_constraint_selection_changed)
+
+    @pyqtSlot()
+    def on_constraint_selection_changed(self):
+        tree: QTreeView = self.findChild(QTreeView, "ConstraintsTree")
+        indexes = tree.selectionModel().selectedIndexes()
+        if not len(indexes):
+            self.constraint_selection = None
+            return
+
+        self.constraint_selection = self.constraint_proxy.mapToSource(indexes[0])
 
     @pyqtSlot()
     def on_constraint_model_changed(self):
@@ -284,8 +385,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ------------------------------------------------------dd--
 
     def setup_room_widgets(self):
-        table: QTableView = self.findChild(QTableView, "RoomTable")
-
         # initialize source model
         self.room_model = GenericTableModel(self)
         # initialize proxy model
@@ -293,6 +392,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # setup these models accordingly
         self.setup_table_models(self.room_model, self.room_proxy, self.on_room_model_changed)
 
+        table: QTableView = self.findChild(QTableView, "RoomTable")
         # set proxy as table source model
         table.setModel(self.room_proxy)
 
@@ -308,4 +408,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ------------------------------------------------------dd--
 
     def setup_solution_widgets(self):
-        pass
+        # initialize source model
+        self.solution_model = GenericTreeModel(self)
+        # setup these models accordingly
+        self.setup_tree_models(self.solution_model, None, self.on_solution_model_changed)
+
+        tree: QTreeView = self.findChild(QTreeView, "SolutionTree")
+        tree.setModel(self.solution_model)
+
+    @pyqtSlot()
+    def on_solution_model_changed(self):
+        tree: QTreeView = self.findChild(QTreeView, "SolutionTree")
+        # TODO: Resize tree columns to fit contents
+
+        tree.expandAll()

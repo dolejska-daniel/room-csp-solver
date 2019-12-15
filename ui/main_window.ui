@@ -228,6 +228,9 @@
    </property>
   </action>
   <action name="actionSave">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Save</string>
    </property>
@@ -239,6 +242,9 @@
    </property>
   </action>
   <action name="actionSaveSolution">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Save solution</string>
    </property>
@@ -271,6 +277,9 @@
    </property>
   </action>
   <action name="actionCreateConstraintFromSelection">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Create for participant selection</string>
    </property>
@@ -282,11 +291,17 @@
    </property>
   </action>
   <action name="actionDeleteParticipant">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Delete</string>
    </property>
   </action>
   <action name="actionDeleteConstraint">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Delete</string>
    </property>
@@ -303,6 +318,9 @@
    </property>
   </action>
   <action name="actionDeleteRoom">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Delete</string>
    </property>

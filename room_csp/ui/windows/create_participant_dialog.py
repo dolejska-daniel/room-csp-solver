@@ -1,3 +1,5 @@
+import traceback
+
 from PyQt5.uic import loadUiType
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QPushButton, QLineEdit, QComboBox
@@ -21,7 +23,7 @@ class CreateParticipantDialog(QCreateParticipantDialog, Ui_CreateParticipantDial
         participant_gender: QComboBox = self.findChild(QComboBox, "ParticipantGender")
         participant_type: QComboBox = self.findChild(QComboBox, "ParticipantType")
 
-        self.send_participant_data.emit({
+        self.participant_data_sent.emit({
             "name": participant_name.text(),
             "gender": participant_gender.currentText(),
             "type": participant_type.currentText(),

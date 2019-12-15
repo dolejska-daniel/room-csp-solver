@@ -51,9 +51,9 @@ class Container:
     def set_constraints(constraints: dict):
         """ Saves defined participant constraints. """
         Container.constraints = {
-            constraint["participant"]: [
-                participant["participant"]
-                for participant in constraint["constraints"]
+            constraint["name"]: [
+                participant["name"]
+                for participant in constraint["_items"]
             ]
             for constraint in constraints
         }
