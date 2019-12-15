@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSignal, QModelIndex
+from PyQt5.QtCore import pyqtSignal, QModelIndex, Qt
 from PyQt5.QtGui import QStandardItemModel
 
 from room_csp.ui.models import GenericItem
@@ -82,6 +82,12 @@ class GenericTreeModel(QStandardItemModel):
         return items
 
     def add_item(self, data: dict, parent_index: QModelIndex = QModelIndex()):
+        # forbid duplicates in given sub-level
+        matching_items = self.findItems(data["name"], Qt.MatchExactly | Qt.MatchRecursive)
+        for matching_item in matching_items:
+            if matching_item.index().parent() == parent_index:
+                return
+
         parent = self.invisibleRootItem()
         if parent_index.isValid():
             parent = self.itemFromIndex(parent_index)
