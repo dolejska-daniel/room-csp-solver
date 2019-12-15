@@ -5,7 +5,7 @@ from constraint import Problem, FunctionConstraint
 from room_csp import *
 
 from PyQt5.QtCore import pyqtSlot, QSortFilterProxyModel, QRegExp, Qt
-from PyQt5.QtWidgets import QAction, QMenu, QTableView, QLineEdit, QFileDialog
+from PyQt5.QtWidgets import QAction, QMenu, QTableView, QLineEdit, QFileDialog, QHeaderView
 from PyQt5.uic import loadUiType
 
 from room_csp.ui.models import GenericTableModel
@@ -19,6 +19,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     participant_model: GenericTableModel = None
     participant_proxy: QSortFilterProxyModel = None
+
+    room_model: GenericTableModel = None
+    room_proxy: QSortFilterProxyModel = None
 
     # ==========================================================================dd==
     #   WINDOW INITIALIZATION
@@ -41,7 +44,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """ Connects menu action signals to corresponding slot functions. """
 
         # category: file
-        self.findChild(QAction, "actionLoad").triggered.connect(self.on_load_all)
+        self.findChild(QAction, "actionLoad").triggered.connect(self.on_load)
         self.findChild(QAction, "actionLoadParticipants").triggered.connect(self.on_load_participants)
         self.findChild(QAction, "actionSave").triggered.connect(self.on_save)
         self.findChild(QAction, "actionSaveSolution").triggered.connect(self.on_save_solution)
@@ -84,12 +87,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ------------------------------------------------------dd--
 
     @pyqtSlot()
-    def on_load_all(self):
+    def on_load(self):
         filepath, _ = QFileDialog.getOpenFileName(self, "Open file", filter="JSON File (*.json)")
         if filepath:
             with open(filepath, 'r') as fp:
                 data = json.load(fp)
                 self.participant_model.set_dataset(data["participants"])
+                self.room_model.set_dataset(data["rooms"])
 
     @pyqtSlot()
     def on_load_participants(self):
@@ -188,6 +192,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ==========================================================================dd==
 
     # ------------------------------------------------------dd--
+    #   Generic utility functions
+    # ------------------------------------------------------dd--
+
+    def setup_table_models(self, model: GenericTableModel, proxy: QSortFilterProxyModel, on_change_slot: pyqtSlot):
+        model.dataChanged.connect(on_change_slot)
+        model.layoutChanged.connect(on_change_slot)
+
+        proxy.setSourceModel(model)
+        proxy.setDynamicSortFilter(True)
+
+    # ------------------------------------------------------dd--
     #   Participant widgets
     # ------------------------------------------------------dd--
 
@@ -202,8 +217,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.participant_model = GenericTableModel(self)
         # initialize proxy model
         self.participant_proxy = QSortFilterProxyModel(self)
-        self.participant_proxy.setSourceModel(self.participant_model)
-        self.participant_proxy.setDynamicSortFilter(True)
+        # setup these models accordingly
+        self.setup_table_models(self.participant_model, self.participant_proxy, self.on_participant_model_changed)
 
         # set proxy as table source model
         table.setModel(self.participant_proxy)
@@ -211,6 +226,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def setup_participant_search(self):
         field: QLineEdit = self.findChild(QLineEdit, "ParticipantSearch")
         field.textChanged.connect(self.on_participant_search)
+
+    @pyqtSlot()
+    def on_participant_model_changed(self):
+        table: QTableView = self.findChild(QTableView, "ParticipantTable")
+        table.horizontalHeader().setStretchLastSection(True)
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
     @pyqtSlot()
     def on_participant_search(self):
@@ -234,7 +255,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ------------------------------------------------------dd--
 
     def setup_room_widgets(self):
-        pass
+        table: QTableView = self.findChild(QTableView, "RoomTable")
+
+        # initialize source model
+        self.room_model = GenericTableModel(self)
+        # initialize proxy model
+        self.room_proxy = QSortFilterProxyModel(self)
+        # setup these models accordingly
+        self.setup_table_models(self.room_model, self.room_proxy, self.on_room_model_changed)
+
+        # set proxy as table source model
+        table.setModel(self.room_proxy)
+
+    @pyqtSlot()
+    def on_room_model_changed(self):
+        table: QTableView = self.findChild(QTableView, "RoomTable")
+        table.horizontalHeader().setStretchLastSection(True)
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
     # ------------------------------------------------------dd--
     #   Solution widgets
