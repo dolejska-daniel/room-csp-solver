@@ -7,6 +7,7 @@ from PyQt5.QtCore import Qt, QModelIndex, QVariant, QAbstractTableModel, pyqtSig
 class GenericTableModel(QAbstractTableModel):
     WholeRowRole = 101
 
+    layoutAboutToBeChanged: pyqtSignal
     layoutChanged: pyqtSignal
 
     header: list = None

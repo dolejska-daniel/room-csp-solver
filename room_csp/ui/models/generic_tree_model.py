@@ -7,6 +7,7 @@ from room_csp.ui.models import GenericItem
 
 
 class GenericTreeModel(QStandardItemModel):
+    layoutAboutToBeChanged: pyqtSignal
     layoutChanged: pyqtSignal
 
     dataset_keys: set = None

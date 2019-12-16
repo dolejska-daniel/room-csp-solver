@@ -15,7 +15,7 @@ from room_csp.ui.models.generic_tree_model import GenericTreeModel
 
 from .create_room_dialog import CreateRoomDialog
 from .create_participant_dialog import CreateParticipantDialog
-from ..views import GenericTreeView, GenericTableView
+from ..views import GenericTreeView, GenericTableView, ExtendedItemView
 
 qt_creator_file = "ui/main_window.ui"
 Ui_MainWindow, QMainWindow = loadUiType(qt_creator_file)
@@ -280,6 +280,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.solution_model.set_dataset(list(solution.values()))
 
     # ==========================================================================dd==
+    #   WIDGET GETTING FUNCTIONS
+    # ==========================================================================dd==
+
+    def get_participant_table(self) -> GenericTableView:
+        return self.findChild(GenericTableView, "ParticipantTable")
+
+    def get_room_table(self) -> GenericTableView:
+        return self.findChild(GenericTableView, "RoomTable")
+
+    def get_constraints_tree(self) -> GenericTreeView:
+        return self.findChild(GenericTreeView, "ConstraintsTree")
+
+    def get_solution_tree(self) -> GenericTreeView:
+        return self.findChild(GenericTreeView, "SolutionTree")
+
+    # ==========================================================================dd==
     #   WIDGET MODEL SETUP
     # ==========================================================================dd==
 
@@ -287,38 +303,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     #   Generic utility functions
     # ------------------------------------------------------dd--
 
-    def setup_table(self, table: QAbstractItemView, model: QAbstractItemModel,
-                    on_selection_change: typing.Union[pyqtSlot, None]):
+    def setup_item_view(self, view: ExtendedItemView, model: QAbstractItemModel, proxy: QAbstractItemModel = None,
+                        on_data_change: pyqtSlot = None, on_selection_change: pyqtSlot = None):
+        # setup provided models accordingly
+        self.setup_item_view_models(model, proxy, on_data_change)
         # set proxy as table source model
-        table.setModel(model)
+        view.setModel(proxy)
 
         # set single selection mode
-        table.setSelectionMode(QAbstractItemView.SingleSelection)
+        view.setSelectionMode(QAbstractItemView.SingleSelection)
         # connect selection signal
         if on_selection_change is not None:
-            table.selectionModel().selectionChanged.connect(on_selection_change)
+            view.selectionModel().selectionChanged.connect(on_selection_change)
 
-    def setup_table_models(self, model: GenericTableModel, proxy: typing.Union[QSortFilterProxyModel, None],
-                           on_data_change: typing.Union[pyqtSlot, None]):
+    def setup_item_view_models(self, model: QAbstractItemModel, proxy: QAbstractItemModel = None,
+                               on_data_change: pyqtSlot = None):
         if on_data_change is not None:
             model.dataChanged.connect(on_data_change)
             model.layoutChanged.connect(on_data_change)
             self.resized.connect(on_data_change)
 
         if proxy is not None:
-            proxy.setSourceModel(model)
             proxy.setDynamicSortFilter(True)
-
-    def setup_tree_models(self, model: GenericTreeModel, proxy: typing.Union[QSortFilterProxyModel, None],
-                          on_data_change: typing.Union[pyqtSlot, None]):
-        if on_data_change is not None:
-            model.dataChanged.connect(on_data_change)
-            model.layoutChanged.connect(on_data_change)
-            self.resized.connect(on_data_change)
-
-        if proxy is not None:
-            proxy.setSourceModel(model)
-            proxy.setDynamicSortFilter(True)
+            if model is not None:
+                proxy.setSourceModel(model)
 
     # ------------------------------------------------------dd--
     #   Participant views
@@ -333,12 +341,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.participant_model = GenericTableModel(self)
         # initialize proxy model
         self.participant_proxy = QSortFilterProxyModel(self)
-        # setup these models accordingly
-        self.setup_table_models(self.participant_model, self.participant_proxy, self.on_participant_model_changed)
 
-        table: QTableView = self.findChild(QTableView, "ParticipantTable")
-        # setup general table properties
-        self.setup_table(table, self.participant_proxy, self.on_participant_selection_changed)
+        table = self.get_participant_table()
+        # setup general view properties
+        self.setup_item_view(
+            table, self.participant_model, self.participant_proxy,
+            self.on_participant_model_changed, self.on_participant_selection_changed
+        )
 
     def setup_participant_search(self):
         field: QLineEdit = self.findChild(QLineEdit, "ParticipantSearch")
@@ -346,7 +355,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_participant_selection_changed(self):
-        table: GenericTableView = self.findChild(GenericTableView, "ParticipantTable")
+        table = self.get_participant_table()
         action_create_constraint: QAction = self.findChild(QAction, "actionCreateConstraintFromSelection")
         action_delete: QAction = self.findChild(QAction, "actionDeleteParticipant")
         indexes = table.selectionModel().selectedIndexes()
@@ -362,8 +371,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_participant_model_changed(self):
-        table: GenericTableView = self.findChild(GenericTableView, "ParticipantTable")
-        table.horizontalHeader().setStretchLastSection(True)
+        table = self.get_participant_table()
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
@@ -386,20 +394,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.constraint_model = GenericTreeModel(self)
         # initialize proxy model
         self.constraint_proxy = QSortFilterProxyModel(self)
-        # setup these models accordingly
-        self.setup_tree_models(self.constraint_model, self.constraint_proxy, self.on_constraint_model_changed)
 
-        tree: GenericTreeView = self.findChild(GenericTreeView, "ConstraintsTree")
-        # set proxy as table source model
-        tree.setModel(self.constraint_proxy)
-        # set single selection mode
-        tree.setSelectionMode(QAbstractItemView.SingleSelection)
-        # connect selection signal
-        tree.selectionModel().selectionChanged.connect(self.on_constraint_selection_changed)
+        tree = self.get_constraints_tree()
+        # setup general view properties
+        self.setup_item_view(
+            tree, self.constraint_model, self.constraint_proxy,
+            self.on_constraint_model_changed, self.on_constraint_selection_changed
+        )
 
     @pyqtSlot()
     def on_constraint_selection_changed(self):
-        tree: GenericTreeView = self.findChild(GenericTreeView, "ConstraintsTree")
+        tree = self.get_constraints_tree()
         action_delete: QAction = self.findChild(QAction, "actionDeleteConstraint")
         indexes = tree.selectionModel().selectedIndexes()
         if not len(indexes):
@@ -412,8 +417,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_constraint_model_changed(self):
-        tree: GenericTreeView = self.findChild(GenericTreeView, "ConstraintsTree")
-        # TODO: Resize tree columns to fit contents
+        tree = self.get_constraints_tree()
+        tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         tree.expandAll()
 
@@ -426,16 +431,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.room_model = GenericTableModel(self)
         # initialize proxy model
         self.room_proxy = QSortFilterProxyModel(self)
-        # setup these models accordingly
-        self.setup_table_models(self.room_model, self.room_proxy, self.on_room_model_changed)
 
-        table: GenericTableView = self.findChild(GenericTableView, "RoomTable")
-        # setup general table properties
-        self.setup_table(table, self.room_proxy, self.on_room_selection_changed)
+        table = self.get_room_table()
+        # setup general view properties
+        self.setup_item_view(
+            table, self.room_model, self.room_proxy,
+            self.on_room_model_changed, self.on_room_selection_changed
+        )
 
     @pyqtSlot()
     def on_room_selection_changed(self):
-        table: GenericTableView = self.findChild(GenericTableView, "RoomTable")
+        table = self.get_room_table()
         action_delete: QAction = self.findChild(QAction, "actionDeleteRoom")
         indexes = table.selectionModel().selectedIndexes()
         if not len(indexes):
@@ -448,8 +454,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_room_model_changed(self):
-        table: GenericTableView = self.findChild(GenericTableView, "RoomTable")
-        table.horizontalHeader().setStretchLastSection(True)
+        table = self.get_room_table()
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
@@ -460,15 +465,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def setup_solution_widgets(self):
         # initialize source model
         self.solution_model = GenericTreeModel(self)
-        # setup these models accordingly
-        self.setup_tree_models(self.solution_model, None, self.on_solution_model_changed)
 
-        tree: GenericTreeView = self.findChild(GenericTreeView, "SolutionTree")
-        tree.setModel(self.solution_model)
+        tree = self.get_solution_tree()
+        # setup general view properties
+        self.setup_item_view(
+            tree, self.solution_model, None,
+            self.on_solution_model_changed, None
+        )
 
     @pyqtSlot()
     def on_solution_model_changed(self):
-        tree: GenericTreeView = self.findChild(GenericTreeView, "SolutionTree")
-        # TODO: Resize tree columns to fit contents
+        tree = self.get_solution_tree()
+        tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         tree.expandAll()
