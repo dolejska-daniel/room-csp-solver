@@ -32,12 +32,15 @@
           </property>
           <layout class="QGridLayout" name="gridLayout_2">
            <item row="1" column="0">
-            <widget class="QTableView" name="ParticipantTable">
+            <widget class="GenericTableView" name="ParticipantTable">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
                <horstretch>1</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="sizeAdjustPolicy">
+              <enum>QAbstractScrollArea::AdjustIgnored</enum>
              </property>
             </widget>
            </item>
@@ -62,12 +65,15 @@
           </property>
           <layout class="QGridLayout" name="gridLayout_3">
            <item row="1" column="0">
-            <widget class="QTreeView" name="ConstraintsTree">
+            <widget class="GenericTreeView" name="ConstraintsTree">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                <horstretch>0</horstretch>
                <verstretch>1</verstretch>
               </sizepolicy>
+             </property>
+             <property name="sizeAdjustPolicy">
+              <enum>QAbstractScrollArea::AdjustIgnored</enum>
              </property>
             </widget>
            </item>
@@ -88,12 +94,15 @@
           </property>
           <layout class="QGridLayout" name="gridLayout_4">
            <item row="0" column="1">
-            <widget class="QTableView" name="RoomTable">
+            <widget class="GenericTableView" name="RoomTable">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="sizeAdjustPolicy">
+              <enum>QAbstractScrollArea::AdjustIgnored</enum>
              </property>
             </widget>
            </item>
@@ -111,12 +120,15 @@
           </property>
           <layout class="QGridLayout" name="gridLayout_5">
            <item row="0" column="0">
-            <widget class="QTreeView" name="SolutionTree">
+            <widget class="GenericTreeView" name="SolutionTree">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                <horstretch>1</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="sizeAdjustPolicy">
+              <enum>QAbstractScrollArea::AdjustIgnored</enum>
              </property>
             </widget>
            </item>
@@ -364,6 +376,18 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>GenericTreeView</class>
+   <extends>QTreeView</extends>
+   <header>room_csp.ui.views.generic_tree_view</header>
+  </customwidget>
+  <customwidget>
+   <class>GenericTableView</class>
+   <extends>QTableView</extends>
+   <header>room_csp.ui.views.generic_table_view</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
