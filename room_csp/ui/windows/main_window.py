@@ -6,13 +6,13 @@ from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import QAction, QMenu, QLineEdit, QFileDialog, QHeaderView, QAbstractItemView, \
     QMessageBox, QStatusBar
 from PyQt5.uic import loadUiType
-from constraint import Problem, FunctionConstraint
 
 from room_csp import *
 from room_csp.ui.models import GenericTableModel, TreeSortFilterProxyModel
 from room_csp.ui.models.generic_tree_model import GenericTreeModel
 from .create_participant_dialog import CreateParticipantDialog
 from .create_room_dialog import CreateRoomDialog
+from ..threads import SolverThread
 from ..views import GenericTreeView, GenericTableView, ExtendedItemView
 
 qt_creator_file = "ui/main_window.ui"
@@ -243,24 +243,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message.exec_()
             return
 
-        p = Problem()
-        # variables are room slots, doman is participant list (with '_' as noone)
-        p.addVariables(Container.room_slots, list(Container.participants.keys()) + ["_"])
+        solver = SolverThread(self)
+        solver.status_changed.connect(self.on_status_change)
+        solver.solution_found.connect(self.on_solution_found)
+        solver.start()
 
-        # all participants are assigned to single room slot
-        p.addConstraint(UniquelyAssignedParticipants())
-        # only one gender per room (either boys or girls)
-        p.addConstraint(SameRoomSameGenders())
-        # all participants have room
-        p.addConstraint(AllParticipantsAssigned())
-        # participants' are in rooms with their mates
-        p.addConstraint(FunctionConstraint(custom_participant_requirements))
-
-        # ---------------------------------------------dd--
-        #   PROBLEM SOLUTION
-        # ---------------------------------------------dd--
+    @pyqtSlot(dict)
+    def on_solution_found(self, solution_data: typing.Union[dict, None]):
         solution = {}
-        solution_data = p.getSolution()
         if solution_data is None:
             message = QMessageBox(self)
             message.setIcon(QMessageBox.Critical)
