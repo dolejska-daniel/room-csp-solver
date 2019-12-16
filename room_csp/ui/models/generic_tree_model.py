@@ -1,3 +1,5 @@
+import traceback
+
 from PyQt5.QtCore import pyqtSignal, QModelIndex, Qt
 from PyQt5.QtGui import QStandardItemModel
 
@@ -39,28 +41,23 @@ class GenericTreeModel(QStandardItemModel):
     def get_dataset(self) -> [dict]:
         dataset = []
         for row in range(self.rowCount()):
-            item = self.item(row, 0)
-            item_index = self.index(row, 0)
-            item_data = {}
-            for column in range(self.columnCount()):
-                key, value = self.itemFromIndex(self.index(row, column)).data(GenericItem.SaveRole)
-                item_data[key] = value
-
-            for sub_row in range(item.rowCount()):
-                if "_items" not in item_data:
-                    item_data["_items"] = []
-
-                sub_item_data = {}
-                for sub_column in range(item.columnCount()):
-                    sub_item = self.itemFromIndex(self.index(sub_row, sub_column, item_index))
-                    key, value = sub_item.data(GenericItem.SaveRole)
-                    sub_item_data[key] = value
-
-                item_data["_items"].append(sub_item_data)
-
-            dataset.append(item_data)
+            row_data = self.get_dataset_row(self.index(row, 0))
+            dataset.append(row_data)
 
         return dataset
+
+    def get_dataset_row(self, index: QModelIndex):
+        row_data = {"_items": []}
+        for column in range(self.columnCount()):
+            item_column = self.itemFromIndex(self.index(index.row(), column, index.parent()))
+            key, value = item_column.data(GenericItem.SaveRole)
+            row_data[key] = value
+
+        for sub_row in range(self.itemFromIndex(index).rowCount()):
+            sub_item_data = self.get_dataset_row(self.index(sub_row, 0, index))
+            row_data["_items"].append(sub_item_data)
+
+        return row_data
 
     def create_item_row(self, data: dict) -> [GenericItem]:
         if not len(data):
@@ -87,6 +84,17 @@ class GenericTreeModel(QStandardItemModel):
         for matching_item in matching_items:
             if matching_item.index().parent() == parent_index:
                 return
+
+        # forbid nesting items too deep
+        level = 0
+        temp_index = parent_index
+        while temp_index.isValid():
+            level += 1
+            temp_index = temp_index.parent()
+
+        # maximum nesting 1 level
+        if level > 1:
+            return
 
         parent = self.invisibleRootItem()
         if parent_index.isValid():

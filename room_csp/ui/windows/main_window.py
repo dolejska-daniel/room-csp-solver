@@ -249,7 +249,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # ---------------------------------------------dd--
         solution = {}
         solution_data = p.getSolution()
-        if not len(solution_data):
+        if solution_data is None:
             message = QMessageBox(self)
             message.setIcon(QMessageBox.Critical)
             message.setWindowTitle("No solution found!")
@@ -262,6 +262,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return
 
         for room_slot, participant_name in solution_data.items():
+            if participant_name == '_':
+                continue
+
             room = room_slot.split("_")[0]
             if room not in solution:
                 solution[room] = {
@@ -273,7 +276,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 "name": participant_name
             })
 
-        print(solution_data)
         self.solution_model.set_dataset(list(solution.values()))
 
     # ==========================================================================dd==

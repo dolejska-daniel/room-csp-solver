@@ -1,3 +1,6 @@
+import sys
+
+
 class Container:
     """ Data holder for CSP solver. """
 
@@ -15,22 +18,25 @@ class Container:
         if not len(participants):
             return
 
-        Container.participants = {
-            p["name"]: p
-            for p in participants
-        }
+        try:
+            Container.participants = {
+                p["name"]: p
+                for p in participants
+            }
 
-        # create a set of existing genders
-        genders = {p["gender"] for p in participants}
-        # assign participants to given gender groups
-        Container.participants_by_gender = {
-            gender: {p["name"] for p in participants if p["gender"] == gender}
-            for gender in genders
-        }
+            # create a set of existing genders
+            genders = {p["gender"] for p in participants}
+            # assign participants to given gender groups
+            Container.participants_by_gender = {
+                gender: {p["name"] for p in participants if p["gender"] == gender}
+                for gender in genders
+            }
 
-        # add 'noone' to each gender group
-        for data in Container.participants_by_gender.values():
-            data.add('_')
+            # add 'noone' to each gender group
+            for data in Container.participants_by_gender.values():
+                data.add('_')
+        except KeyError as err:
+            print("Invalid participants format! Missing field: " + str(err), file=sys.stderr)
 
     @staticmethod
     def set_rooms(rooms: list):
@@ -38,20 +44,23 @@ class Container:
         if not len(rooms):
             return
 
-        Container.rooms = {
-            r["name"]: r
-            for r in rooms
-        }
+        try:
+            Container.rooms = {
+                r["name"]: r
+                for r in rooms
+            }
 
-        room_slots = []
-        # for each room
-        for room in rooms:
-            # based on its size
-            for slot in range(0, room["beds"]):
-                # create slot
-                room_slots.append(f"{room['name']}_{slot}")
+            room_slots = []
+            # for each room
+            for room in rooms:
+                # based on its size
+                for slot in range(0, room["beds"]):
+                    # create slot
+                    room_slots.append(f"{room['name']}_{slot}")
 
-        Container.room_slots = room_slots
+            Container.room_slots = room_slots
+        except KeyError as err:
+            print("Invalid rooms format! Missing field: " + str(err), file=sys.stderr)
 
     @staticmethod
     def set_constraints(constraints: dict):
@@ -59,10 +68,13 @@ class Container:
         if not len(constraints):
             return
 
-        Container.constraints = {
-            constraint["name"]: [
-                participant["name"]
-                for participant in constraint["_items"]
-            ]
-            for constraint in constraints
-        }
+        try:
+            Container.constraints = {
+                constraint["name"]: [
+                    participant["name"]
+                    for participant in constraint["_items"]
+                ]
+                for constraint in constraints
+            }
+        except KeyError as err:
+            print("Invalid constraints format! Missing field: " + str(err), file=sys.stderr)
