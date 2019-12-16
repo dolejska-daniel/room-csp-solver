@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QThread, pyqtSignal
-from constraint import Problem, FunctionConstraint
+from constraint import Problem, FunctionConstraint, MinConflictsSolver
 
-from room_csp import *
+from room_csp.logic import *
 
 
 class SolverThread(QThread):
@@ -15,7 +15,7 @@ class SolverThread(QThread):
         self.wait()
 
     def run(self) -> None:
-        p = Problem()
+        p = Problem(solver=MinConflictsSolver())
         # variables are room slots, doman is participant list (with '_' as noone)
         p.addVariables(Container.room_slots, list(Container.participants.keys()) + ["_"])
 
@@ -23,9 +23,9 @@ class SolverThread(QThread):
         p.addConstraint(UniquelyAssignedParticipants())
         # only one gender per room (either boys or girls)
         p.addConstraint(SameRoomSameGenders())
-        # all participants have room
-        p.addConstraint(AllParticipantsAssigned())
         # participants' are in rooms with their mates
         p.addConstraint(FunctionConstraint(custom_participant_requirements))
+        # all participants have room
+        p.addConstraint(AllParticipantsAssigned())
 
         self.solution_found.emit(p.getSolution())

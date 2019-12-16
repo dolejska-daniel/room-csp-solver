@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QAction, QMenu, QLineEdit, QFileDialog, QHeaderView,
     QMessageBox, QStatusBar
 from PyQt5.uic import loadUiType
 
-from room_csp import *
+from room_csp.logic import Container
 from room_csp.ui.models import GenericTableModel, TreeSortFilterProxyModel
 from room_csp.ui.models.generic_tree_model import GenericTreeModel
 from .create_participant_dialog import CreateParticipantDialog
