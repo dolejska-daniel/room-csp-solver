@@ -370,6 +370,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         field.textChanged.connect(self.on_participant_search)
 
     @pyqtSlot()
+    def on_participant_search(self):
+        field: QLineEdit = self.findChild(QLineEdit, "ParticipantSearch")
+
+        search_string = field.text()
+        search_string = search_string.replace(" ", ".*")
+        search_string = ".*" + search_string + ".*"
+
+        self.participant_proxy.setFilterRegExp(QRegExp(search_string, Qt.CaseInsensitive))
+
+    @pyqtSlot()
     def on_participant_selection_changed(self):
         table = self.get_participant_table()
         indexes = table.selectionModel().selectedIndexes()
@@ -395,25 +405,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not table.indexAt(event.pos()).isValid():
             table.selectionModel().clearSelection()
 
-    @pyqtSlot()
-    def on_participant_search(self):
-        field: QLineEdit = self.findChild(QLineEdit, "ParticipantSearch")
-
-        search_string = field.text()
-        search_string = search_string.replace(" ", ".*")
-        search_string = ".*" + search_string + ".*"
-
-        self.participant_proxy.setFilterRegExp(QRegExp(search_string, Qt.CaseInsensitive))
-
     # ------------------------------------------------------dd--
     #   Constraint views
     # ------------------------------------------------------dd--
 
     def setup_constraint_widgets(self):
+        self.setup_constraint_tree()
+        self.setup_constraint_search()
+
+    def setup_constraint_tree(self):
         # initialize source model
         self.constraint_model = GenericTreeModel(self)
         # initialize proxy model
         self.constraint_proxy = QSortFilterProxyModel(self)
+        self.constraint_proxy.setRecursiveFilteringEnabled(True)
 
         tree = self.get_constraints_tree()
         # setup general view properties
@@ -422,6 +427,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.on_constraint_model_changed, self.on_constraint_selection_changed,
             self.on_constraint_tree_mouse_release
         )
+
+    def setup_constraint_search(self):
+        field: QLineEdit = self.findChild(QLineEdit, "ConstraintSearch")
+        field.textChanged.connect(self.on_constraint_search)
+
+    @pyqtSlot()
+    def on_constraint_search(self):
+        field: QLineEdit = self.findChild(QLineEdit, "ConstraintSearch")
+
+        search_string = field.text()
+        search_string = search_string.replace(" ", ".*")
+        search_string = ".*" + search_string + ".*"
+
+        self.constraint_proxy.setFilterRegExp(QRegExp(search_string, Qt.CaseInsensitive))
 
     @pyqtSlot()
     def on_constraint_selection_changed(self):
