@@ -9,6 +9,7 @@ verify_ssl = true
 python-constraint = "*"
 pyqt5 = "*"
 pyqt5-stubs = "*"
+pyinstaller = "*"
 
 [requires]
 python_version = "3.7"
