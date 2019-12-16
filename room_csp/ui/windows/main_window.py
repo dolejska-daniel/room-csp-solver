@@ -1,21 +1,18 @@
 import json
 import typing
 
+from PyQt5.QtCore import pyqtSlot, QSortFilterProxyModel, QRegExp, Qt, pyqtSignal, QModelIndex, QAbstractItemModel
 from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtWidgets import QAction, QMenu, QLineEdit, QFileDialog, QHeaderView, QAbstractItemView, \
+    QMessageBox, QStatusBar
+from PyQt5.uic import loadUiType
 from constraint import Problem, FunctionConstraint
 
 from room_csp import *
-
-from PyQt5.QtCore import pyqtSlot, QSortFilterProxyModel, QRegExp, Qt, pyqtSignal, QModelIndex, QAbstractItemModel
-from PyQt5.QtWidgets import QAction, QMenu, QTableView, QLineEdit, QFileDialog, QHeaderView, QAbstractItemView, \
-    QMessageBox
-from PyQt5.uic import loadUiType
-
-from room_csp.ui.models import GenericTableModel
+from room_csp.ui.models import GenericTableModel, TreeSortFilterProxyModel
 from room_csp.ui.models.generic_tree_model import GenericTreeModel
-
-from .create_room_dialog import CreateRoomDialog
 from .create_participant_dialog import CreateParticipantDialog
+from .create_room_dialog import CreateRoomDialog
 from ..views import GenericTreeView, GenericTableView, ExtendedItemView
 
 qt_creator_file = "ui/main_window.ui"
@@ -117,13 +114,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.room_model.set_dataset(data["rooms"])
                 self.constraint_model.set_dataset(data["constraints"])
 
+            self.get_constraints_tree().expandAll()
+
     @pyqtSlot()
     def on_load_participants(self):
         pass
 
     @pyqtSlot()
     def on_save(self):
-        pass
+        filepath, _ = QFileDialog.getSaveFileName(self, "Save file", filter="JSON File (*.json)")
+        if filepath:
+            with open(filepath, 'w') as fp:
+                data = {
+                    "rooms": self.room_model.get_dataset(),
+                    "participants": self.participant_model.get_dataset(),
+                    "constraints": self.constraint_model.get_dataset(),
+                }
+                json.dump(data, fp)
 
     @pyqtSlot()
     def on_save_solution(self):
@@ -210,9 +217,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.constraint_model.add_item(data, self.constraint_selection)
 
+        self.get_constraints_tree().expandAll()
+
     @pyqtSlot()
     def on_delete_constraint(self):
         self.constraint_model.remove_item(self.constraint_selection)
+        self.get_constraints_tree().expandAll()
 
     # ------------------------------------------------------dd--
     #   Category: Solution
@@ -278,7 +288,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 "name": participant_name
             })
 
-        self.solution_model.set_dataset(list(solution.values()))
+        solution_dataset = list(solution.values())
+        self.solution_model.set_dataset(solution_dataset)
+
+    # ------------------------------------------------------dd--
+    #   Category: Solution
+    # ------------------------------------------------------dd--
+
+    @pyqtSlot(str)
+    def on_status_change(self, message: str):
+        self.findChild(QStatusBar, "statusbar").showMessage(message)
 
     # ==========================================================================dd==
     #   WIDGET GETTING FUNCTIONS
@@ -320,7 +339,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # setup provided models accordingly
         self.setup_item_view_models(model, proxy, on_data_change)
         # set proxy as table source model
-        view.setModel(proxy)
+        view.setModel(model if proxy is None else proxy)
 
         # set single selection mode
         view.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -417,7 +436,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # initialize source model
         self.constraint_model = GenericTreeModel(self)
         # initialize proxy model
-        self.constraint_proxy = QSortFilterProxyModel(self)
+        self.constraint_proxy = TreeSortFilterProxyModel(self)
         self.constraint_proxy.setRecursiveFilteringEnabled(True)
 
         tree = self.get_constraints_tree()
@@ -441,6 +460,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         search_string = ".*" + search_string + ".*"
 
         self.constraint_proxy.setFilterRegExp(QRegExp(search_string, Qt.CaseInsensitive))
+        self.get_constraints_tree().expandAll()
 
     @pyqtSlot()
     def on_constraint_selection_changed(self):
@@ -458,7 +478,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_constraint_model_changed(self):
         tree = self.get_constraints_tree()
         tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
-
         tree.expandAll()
 
     @pyqtSlot(QMouseEvent)
@@ -529,7 +548,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_solution_model_changed(self):
         tree = self.get_solution_tree()
         tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
-
         tree.expandAll()
 
     @pyqtSlot(QMouseEvent)
