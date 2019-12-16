@@ -1,6 +1,7 @@
 import json
 import typing
 
+from PyQt5.QtGui import QMouseEvent
 from constraint import Problem, FunctionConstraint
 
 from room_csp import *
@@ -295,6 +296,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def get_solution_tree(self) -> GenericTreeView:
         return self.findChild(GenericTreeView, "SolutionTree")
 
+    # ------------------------------------------------------dd--
+    #   Helper widget manipulation functions
+    # ------------------------------------------------------dd--
+
+    def disable_action(self, identifier: str):
+        self.findChild(QAction, identifier).setEnabled(False)
+
+    def enable_action(self, identifier: str):
+        self.findChild(QAction, identifier).setEnabled(True)
+
     # ==========================================================================dd==
     #   WIDGET MODEL SETUP
     # ==========================================================================dd==
@@ -304,7 +315,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     # ------------------------------------------------------dd--
 
     def setup_item_view(self, view: ExtendedItemView, model: QAbstractItemModel, proxy: QAbstractItemModel = None,
-                        on_data_change: pyqtSlot = None, on_selection_change: pyqtSlot = None):
+                        on_data_change: pyqtSlot = None, on_selection_change: pyqtSlot = None,
+                        on_mouse_release: pyqtSlot = None):
         # setup provided models accordingly
         self.setup_item_view_models(model, proxy, on_data_change)
         # set proxy as table source model
@@ -315,6 +327,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # connect selection signal
         if on_selection_change is not None:
             view.selectionModel().selectionChanged.connect(on_selection_change)
+        # connect mouse signal
+        if on_mouse_release is not None:
+            view.mouseReleased.connect(on_mouse_release)
 
     def setup_item_view_models(self, model: QAbstractItemModel, proxy: QAbstractItemModel = None,
                                on_data_change: pyqtSlot = None):
@@ -346,7 +361,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # setup general view properties
         self.setup_item_view(
             table, self.participant_model, self.participant_proxy,
-            self.on_participant_model_changed, self.on_participant_selection_changed
+            self.on_participant_model_changed, self.on_participant_selection_changed,
+            self.on_participant_table_mouse_release
         )
 
     def setup_participant_search(self):
@@ -356,17 +372,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def on_participant_selection_changed(self):
         table = self.get_participant_table()
-        action_create_constraint: QAction = self.findChild(QAction, "actionCreateConstraintFromSelection")
-        action_delete: QAction = self.findChild(QAction, "actionDeleteParticipant")
         indexes = table.selectionModel().selectedIndexes()
         if not len(indexes):
-            action_create_constraint.setEnabled(False)
-            action_delete.setEnabled(False)
+            self.disable_action("actionCreateConstraintFromSelection")
+            self.disable_action("actionDeleteParticipant")
             self.participant_selection = None
             return
 
-        action_create_constraint.setEnabled(True)
-        action_delete.setEnabled(True)
+        self.enable_action("actionCreateConstraintFromSelection")
+        self.enable_action("actionDeleteParticipant")
         self.participant_selection = self.participant_proxy.mapToSource(indexes[0])
 
     @pyqtSlot()
@@ -374,6 +388,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         table = self.get_participant_table()
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+    @pyqtSlot(QMouseEvent)
+    def on_participant_table_mouse_release(self, event: QMouseEvent):
+        table = self.get_participant_table()
+        if not table.indexAt(event.pos()).isValid():
+            table.selectionModel().clearSelection()
 
     @pyqtSlot()
     def on_participant_search(self):
@@ -399,20 +419,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # setup general view properties
         self.setup_item_view(
             tree, self.constraint_model, self.constraint_proxy,
-            self.on_constraint_model_changed, self.on_constraint_selection_changed
+            self.on_constraint_model_changed, self.on_constraint_selection_changed,
+            self.on_constraint_tree_mouse_release
         )
 
     @pyqtSlot()
     def on_constraint_selection_changed(self):
         tree = self.get_constraints_tree()
-        action_delete: QAction = self.findChild(QAction, "actionDeleteConstraint")
         indexes = tree.selectionModel().selectedIndexes()
         if not len(indexes):
-            action_delete.setEnabled(False)
+            self.disable_action("actionDeleteConstraint")
             self.constraint_selection = None
             return
 
-        action_delete.setEnabled(True)
+        self.enable_action("actionDeleteConstraint")
         self.constraint_selection = self.constraint_proxy.mapToSource(indexes[0])
 
     @pyqtSlot()
@@ -421,6 +441,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         tree.expandAll()
+
+    @pyqtSlot(QMouseEvent)
+    def on_constraint_tree_mouse_release(self, event: QMouseEvent):
+        tree = self.get_constraints_tree()
+        if not tree.indexAt(event.pos()).isValid():
+            tree.selectionModel().clearSelection()
 
     # ------------------------------------------------------dd--
     #   Room views
@@ -436,20 +462,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # setup general view properties
         self.setup_item_view(
             table, self.room_model, self.room_proxy,
-            self.on_room_model_changed, self.on_room_selection_changed
+            self.on_room_model_changed, self.on_room_selection_changed,
+            self.on_room_table_mouse_release
         )
 
     @pyqtSlot()
     def on_room_selection_changed(self):
         table = self.get_room_table()
-        action_delete: QAction = self.findChild(QAction, "actionDeleteRoom")
         indexes = table.selectionModel().selectedIndexes()
         if not len(indexes):
-            action_delete.setEnabled(False)
+            self.disable_action("actionDeleteRoom")
             self.room_selection = None
             return
 
-        action_delete.setEnabled(True)
+        self.enable_action("actionDeleteRoom")
         self.room_selection = self.room_proxy.mapToSource(indexes[0])
 
     @pyqtSlot()
@@ -457,6 +483,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         table = self.get_room_table()
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+    @pyqtSlot(QMouseEvent)
+    def on_room_table_mouse_release(self, event: QMouseEvent):
+        table = self.get_room_table()
+        if not table.indexAt(event.pos()).isValid():
+            table.selectionModel().clearSelection()
 
     # ------------------------------------------------------dd--
     #   Solution views
@@ -470,7 +502,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # setup general view properties
         self.setup_item_view(
             tree, self.solution_model, None,
-            self.on_solution_model_changed, None
+            self.on_solution_model_changed, None,
+            self.on_solution_tree_mouse_release
         )
 
     @pyqtSlot()
@@ -479,3 +512,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         tree.expandAll()
+
+    @pyqtSlot(QMouseEvent)
+    def on_solution_tree_mouse_release(self, event: QMouseEvent):
+        tree = self.get_solution_tree()
+        if not tree.indexAt(event.pos()).isValid():
+            tree.selectionModel().clearSelection()
