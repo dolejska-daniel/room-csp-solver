@@ -10,7 +10,7 @@ class SameRoomSameGenders(Constraint):
     def __call__(
             self,
             room_slots,
-            participant_domains,
+            participant_domains: dict,
             assignments,
             forwardcheck=False,
             _unassigned=Unassigned,
@@ -18,14 +18,14 @@ class SameRoomSameGenders(Constraint):
         room_gender = {room_name: None for room_name in Container.rooms.keys()}
 
         # get current slot assignment
-        for room_slot, participant in assignments.items():
-            if participant == '_':
+        for room_slot, participant_name in assignments.items():
+            if participant_name == '_':
                 continue
 
             # select room from slot name
             room = Utils.get_room_from_slot(room_slot)
             # get participant's gender
-            gender = Container.participants[participant]["gender"]
+            gender = Utils.get_participant_gender(participant_name)
 
             if room_gender[room] is None:
                 # no master gender has been selected yet
@@ -39,18 +39,18 @@ class SameRoomSameGenders(Constraint):
         # check whether forward check should be done
         if forwardcheck:
             # for assigned slot get current participant
-            for room_slot, participant in assignments.items():
-                if participant == '_':
+            for room_slot, participant_name in assignments.items():
+                if participant_name == '_':
                     continue
 
                 # select room from slot name
                 room = room_slot.split('_')[0]
                 # get participant's gender
-                gender = Container.participants[participant]["gender"]
+                gender = Utils.get_participant_gender(participant_name)
 
-                for slot in range(0, Container.rooms[room]["beds"]):
+                _room_slots = Utils.get_room_slots(room)
+                for target_room_slot in _room_slots:
                     # for all other slots in this room
-                    target_room_slot = f"{room}_{slot}"
                     # reduce available selection
 
                     # get current domain

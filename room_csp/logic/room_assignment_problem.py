@@ -12,6 +12,8 @@ class RoomAssignmentProblem(Problem):
         # variables are room slots, doman is participant list (with '_' as noone)
         self.addVariables(Container.room_slots, ["_"] + list(Container.participants.keys()))
 
+        # all participants have room
+        self.addConstraint(RespectRoomType())
         # only one gender per room (either boys or girls)
         self.addConstraint(SameRoomSameGenders())
         # all participants are assigned to single room slot

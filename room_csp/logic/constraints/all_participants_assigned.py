@@ -1,18 +1,18 @@
 from constraint import Constraint, Unassigned
 
-from ..container import Container
+from ..utils import Utils
 
 
 class AllParticipantsAssigned(Constraint):
     """ Ensures that all participants are assigned to at least one room. """
 
     def __call__(
-        self,
-        room_slots,
-        participant_domains,
-        assignments,
-        forwardcheck=False,
-        _unassigned=Unassigned,
+            self,
+            room_slots,
+            participant_domains: dict,
+            assignments,
+            forwardcheck=False,
+            _unassigned=Unassigned,
     ):
         # check that each room slot
         for room_slot in room_slots:
@@ -20,7 +20,7 @@ class AllParticipantsAssigned(Constraint):
             if room_slot not in assignments:
                 return True
 
-        unassigned_participants = set(Container.participants.keys())
+        unassigned_participants = Utils.get_participant_names()
         # validate, that for each room slot
         for room_slot in room_slots:
             # assigned participant of that slot

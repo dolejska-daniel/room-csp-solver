@@ -5,12 +5,12 @@ class UniquelyAssignedParticipants(Constraint):
     """ Ensures that participants are assigned to rooms' slots only once. """
 
     def __call__(
-        self,
-        room_slots,
-        participant_domains,
-        assignments,
-        forwardcheck=False,
-        _unassigned=Unassigned,
+            self,
+            room_slots,
+            participant_domains: dict,
+            assignments,
+            forwardcheck=False,
+            _unassigned=Unassigned,
     ):
         seen = set()
         # get current slot assignment

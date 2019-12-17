@@ -9,6 +9,7 @@ class Container:
 
     participants: dict = {}
     participants_by_gender: dict = {}
+    participants_by_type: dict = {}
 
     constraints: dict = {}
     constraints_all: dict = {}
@@ -32,10 +33,17 @@ class Container:
                 gender: {p["name"] for p in participants if p["gender"] == gender}
                 for gender in genders
             }
-
             # add 'noone' to each gender group
             for data in Container.participants_by_gender.values():
                 data.add('_')
+
+            # create a set of existing genders
+            types = {p["type"] for p in participants}
+            # assign participants to given gender groups
+            Container.participants_by_type = {
+                _type: {p["name"] for p in participants if p["type"] == _type}
+                for _type in types
+            }
         except KeyError as err:
             print("Invalid participants format! Missing field: " + str(err), file=sys.stderr)
 

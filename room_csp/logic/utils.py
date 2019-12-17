@@ -30,6 +30,26 @@ class Utils:
         return Container.rooms[room_name]["beds"]
 
     @staticmethod
+    def get_participant_names() -> set:
+        return set(Container.participants.keys())
+
+    @staticmethod
+    def get_participant(participant_name: str) -> dict:
+        return Container.participants[participant_name]
+
+    @staticmethod
+    def get_participant_type(participant_name: str) -> str:
+        return Container.participants[participant_name]["type"]
+
+    @staticmethod
+    def get_participant_gender(participant_name: str) -> str:
+        return Container.participants[participant_name]["gender"]
+
+    @staticmethod
+    def get_room_type(room_name: str) -> str:
+        return Container.rooms[room_name]["type"]
+
+    @staticmethod
     def is_participant_constrained(participant_name: str):
         return participant_name in Container.constraints_all
 

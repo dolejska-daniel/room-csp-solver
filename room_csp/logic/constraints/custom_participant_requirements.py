@@ -1,6 +1,5 @@
 from constraint import Constraint, Unassigned, Domain
 
-from ..container import Container
 from ..utils import Utils
 
 
@@ -24,7 +23,7 @@ class CustomParticipantRequirements(Constraint):
     def __call__(
             self,
             room_slots,
-            participant_domains,
+            participant_domains: dict,
             assignments,
             forwardcheck=False,
             _unassigned=Unassigned,
@@ -66,8 +65,9 @@ class CustomParticipantRequirements(Constraint):
 
                 # for each assigned participant
                 room = Utils.get_room_from_slot(room_slot)
-                if participant_name in Container.constraints:
-                    for constraint_participant in Container.constraints[participant_name]:
+                if Utils.is_participant_constrained(participant_name):
+                    constrained_participants = Utils.get_participant_constraints(participant_name)
+                    for constrained_participant_name in constrained_participants:
                         # for each their constraint
                         for slot in room_slots:
                             if slot.startswith(room):
@@ -76,7 +76,7 @@ class CustomParticipantRequirements(Constraint):
 
                             # remove it from domain of possible values
                             domain: Domain = participant_domains[slot]
-                            if constraint_participant in domain:
-                                domain.hideValue(constraint_participant)
+                            if constrained_participant_name in domain:
+                                domain.hideValue(constrained_participant_name)
 
         return True

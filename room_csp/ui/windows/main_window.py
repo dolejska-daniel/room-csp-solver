@@ -268,15 +268,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         solution = {}
         for room_slot, participant_name in solution_data.items():
-            if participant_name == '_':
-                continue
-
-            room = room_slot.split("_")[0]
+            room = Utils.get_room_from_slot(room_slot)
             if room not in solution:
                 solution[room] = {
                     "name": room,
                     "_items": [],
                 }
+
+            if participant_name == '_':
+                continue
 
             solution[room]["_items"].append({
                 "name": participant_name
@@ -286,6 +286,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             room["name"] += f" ({len(room['_items'])}/{Utils.get_room_slot_count(room_name)})"
 
         solution_dataset = list(solution.values())
+        solution_dataset = sorted(solution_dataset, key=lambda x: x["name"])
         self.solution_model.set_dataset(solution_dataset)
 
     # ------------------------------------------------------dd--
