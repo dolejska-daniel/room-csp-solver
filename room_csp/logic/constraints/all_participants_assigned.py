@@ -1,6 +1,6 @@
 from constraint import Constraint, Unassigned
 
-from room_csp.logic import Container
+from ..container import Container
 
 
 class AllParticipantsAssigned(Constraint):

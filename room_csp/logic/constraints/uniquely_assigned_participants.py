@@ -13,10 +13,9 @@ class UniquelyAssignedParticipants(Constraint):
         _unassigned=Unassigned,
     ):
         seen = set()
-        for room_slot in room_slots:
-            # get current slot assignment
-            participant = assignments.get(room_slot, _unassigned)
-            if participant is _unassigned or participant == '_':
+        # get current slot assignment
+        for room_slot, participant in assignments.items():
+            if participant == '_':
                 continue
 
             if participant in seen:
@@ -25,21 +24,18 @@ class UniquelyAssignedParticipants(Constraint):
             seen.add(participant)
 
         if forwardcheck:
-            for room_slot in room_slots:
-                if room_slot in assignments:
-                    # for assigned slot get current participant
-                    participant = assignments.get(room_slot, _unassigned)
-                    if participant == '_':
+            for room_slot, participant in assignments.items():
+                if participant == '_':
+                    continue
+
+                # now for each room slot participant domain
+                for target_room_slot, participant_domain in participant_domains.items():
+                    if target_room_slot == room_slot:
                         continue
 
-                    # now for each room slot participant domain
-                    for target_room_slot, participant_domain in participant_domains.items():
-                        if target_room_slot == room_slot:
-                            continue
-
-                        # which contains this participant
-                        if participant in participant_domain:
-                            # remove this participant as possible value
-                            participant_domain.hideValue(participant)
+                    # which contains this participant
+                    if participant in participant_domain:
+                        # remove this participant as possible value
+                        participant_domain.hideValue(participant)
 
         return True

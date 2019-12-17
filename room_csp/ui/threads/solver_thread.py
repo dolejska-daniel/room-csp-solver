@@ -1,12 +1,12 @@
 from PyQt5.QtCore import QThread, pyqtSignal
-from constraint import Problem, FunctionConstraint, MinConflictsSolver
 
-from room_csp.logic import *
+from room_csp.logic import RoomAssignmentProblem
 
 
 class SolverThread(QThread):
     status_changed = pyqtSignal(str)
     solution_found = pyqtSignal(dict)
+    solution_not_found = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -15,17 +15,18 @@ class SolverThread(QThread):
         self.wait()
 
     def run(self) -> None:
-        p = Problem(solver=MinConflictsSolver())
-        # variables are room slots, doman is participant list (with '_' as noone)
-        p.addVariables(Container.room_slots, list(Container.participants.keys()) + ["_"])
+        problem = RoomAssignmentProblem()
 
-        # all participants are assigned to single room slot
-        p.addConstraint(UniquelyAssignedParticipants())
-        # only one gender per room (either boys or girls)
-        p.addConstraint(SameRoomSameGenders())
-        # participants' are in rooms with their mates
-        p.addConstraint(FunctionConstraint(custom_participant_requirements))
-        # all participants have room
-        p.addConstraint(AllParticipantsAssigned())
+        try:
+            self.status_changed.emit("Solving...")
+            solution = problem.getSolution()
+            self.status_changed.emit("Solving done!")
+            if solution is None:
+                self.solution_not_found.emit()
 
-        self.solution_found.emit(p.getSolution())
+            else:
+                self.solution_found.emit(solution)
+
+        except Exception:
+            import traceback
+            traceback.print_exc()

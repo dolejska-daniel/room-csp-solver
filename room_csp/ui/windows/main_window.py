@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import QAction, QMenu, QLineEdit, QFileDialog, QHeaderView,
     QMessageBox, QStatusBar
 from PyQt5.uic import loadUiType
 
-from room_csp.logic import Container
 from room_csp.ui.models import GenericTableModel, TreeSortFilterProxyModel
 from room_csp.ui.models.generic_tree_model import GenericTreeModel
 from .create_participant_dialog import CreateParticipantDialog
@@ -230,6 +229,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_solve(self):
+        from room_csp.logic import Container
+
         Container.set_rooms(self.room_model.get_dataset())
         Container.set_participants(self.participant_model.get_dataset())
         Container.set_constraints(self.constraint_model.get_dataset())
@@ -246,23 +247,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         solver = SolverThread(self)
         solver.status_changed.connect(self.on_status_change)
         solver.solution_found.connect(self.on_solution_found)
+        solver.solution_not_found.connect(self.on_solution_not_found)
         solver.start()
+
+    @pyqtSlot()
+    def on_solution_not_found(self):
+        message = QMessageBox(self)
+        message.setIcon(QMessageBox.Critical)
+        message.setWindowTitle("No solution found!")
+        message.setText(
+            "Current problem definition does not have any solutions!\n"
+            "Consider disabling constraints and check that there is enough room for all the participants."
+        )
+        message.setStandardButtons(QMessageBox.Ok)
+        message.exec_()
 
     @pyqtSlot(dict)
     def on_solution_found(self, solution_data: typing.Union[dict, None]):
-        solution = {}
-        if solution_data is None:
-            message = QMessageBox(self)
-            message.setIcon(QMessageBox.Critical)
-            message.setWindowTitle("No solution found!")
-            message.setText(
-                "Current problem definition does not have any solutions!\n"
-                "Consider disabling constraints and check that there is enough room for all the participants."
-            )
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec_()
-            return
+        from room_csp.logic import Utils
 
+        solution = {}
         for room_slot, participant_name in solution_data.items():
             if participant_name == '_':
                 continue
@@ -277,6 +281,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             solution[room]["_items"].append({
                 "name": participant_name
             })
+
+        for room_name, room in solution.items():
+            room["name"] += f" ({len(room['_items'])}/{Utils.get_room_slot_count(room_name)})"
 
         solution_dataset = list(solution.values())
         self.solution_model.set_dataset(solution_dataset)

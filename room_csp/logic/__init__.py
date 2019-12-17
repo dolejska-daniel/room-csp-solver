@@ -1,12 +1,17 @@
-from .container import Container
-from .utils import room_slot_assignment_to_room_participant_list
+from .commented_bactracking_solver import CommentedBacktrackingSolver
 from .constraints import *
+from .container import Container
+from .room_assignment_problem import RoomAssignmentProblem
+from .utils import Utils
 
 __all__ = [
     "Container",
+    "CommentedBacktrackingSolver",
+    "RoomAssignmentProblem",
+    "Utils",
+    # constraints
     "AllParticipantsAssigned",
     "SameRoomSameGenders",
     "UniquelyAssignedParticipants",
-    "custom_participant_requirements",
-    "room_slot_assignment_to_room_participant_list",
+    "CustomParticipantRequirements",
 ]

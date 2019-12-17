@@ -11,6 +11,7 @@ class Container:
     participants_by_gender: dict = {}
 
     constraints: dict = {}
+    constraints_all: dict = {}
 
     @staticmethod
     def set_participants(participants: list):
@@ -76,5 +77,20 @@ class Container:
                 ]
                 for constraint in constraints
             }
+
+            for participant_name, subconstraints in Container.constraints.items():
+                if participant_name in Container.constraints_all:
+                    Container.constraints_all[participant_name] += set(subconstraints)
+                    continue
+
+                Container.constraints_all[participant_name] = set(subconstraints)
+
+                for constrained_participant_name in subconstraints:
+                    if constrained_participant_name in Container.constraints_all:
+                        Container.constraints_all[constrained_participant_name] += participant_name
+                        continue
+
+                    Container.constraints_all[constrained_participant_name] = {participant_name}
+
         except KeyError as err:
             print("Invalid constraints format! Missing field: " + str(err), file=sys.stderr)

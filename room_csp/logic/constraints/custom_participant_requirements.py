@@ -1,56 +1,82 @@
-from constraint import Constraint, Unassigned
+from constraint import Constraint, Unassigned, Domain
 
-from room_csp.logic import Container
+from ..container import Container
+from ..utils import Utils
 
 
 class CustomParticipantRequirements(Constraint):
     """ Ensures that all participant's requirements are met. """
 
+    @staticmethod
+    def valid_room_assignment(source_participant_name: str, constrained_participant_name: str,
+                              local_assignments: dict) -> bool:
+        """ This method checks wheter the constraint between two participant is satisfied.
+
+         Method expects source_participant to be assigned to any room, constrained participant
+         does not have to be assigned yet.
+        """
+        if constrained_participant_name not in local_assignments:
+            # constrained participant has not been assigned to any room yet
+            return True
+
+        return local_assignments[source_participant_name] != local_assignments[constrained_participant_name]
+
     def __call__(
-        self,
-        room_slots,
-        participant_domains,
-        assignments,
-        forwardcheck=False,
-        _unassigned=Unassigned,
+            self,
+            room_slots,
+            participant_domains,
+            assignments,
+            forwardcheck=False,
+            _unassigned=Unassigned,
     ):
-        for room_slot in room_slots:
-            # get current slot assignment
-            participant = assignments.get(room_slot, _unassigned)
-            if participant is _unassigned or participant == '_':
+        room_assignments = Utils.room_slot_assignment_to_room_participant_list(room_slots, assignments)
+        # foreach assigned room slot
+        for room_slot, participant_name in assignments.items():
+            # which is not assigned to nobody
+            if participant_name == '_':
                 continue
 
-        if forwardcheck:
-            pass
+            # if participant is actually constrained
+            if not Utils.is_participant_constrained(participant_name):
+                continue
 
-        return True
+            room = Utils.get_room_from_slot(room_slot)
+            # list of participants constrained by this participant
+            constrained_participants = Utils.get_participant_constraints(participant_name)
+            # count of room slots which are already assigned
+            assigned_room_slot_count = len(room_assignments[room])
+            # count of currently unassigned room slots
+            unassigned_room_slot_count = Utils.get_room_slot_count(room) - assigned_room_slot_count
+            # count of room slots that have been assigned to constrained participants
+            constraint_assigned_room_slots = len([
+                1 for _participant_name in room_assignments[room]
+                if _participant_name in constrained_participants
+            ])
 
-
-def custom_participant_requirements(*args, **kwargs) -> bool:
-    """ Ensures that all participant's requirements are met. """
-    # variable for current status aggregation
-    participant_rooms = {participant_name: None for participant_name in Container.participants.keys()}
-    # map selected participants to assigned room slots
-    for room_slot, participant in zip(Container.room_slots, args):
-        # there is no need to validate room slots of "noone"
-        if participant == "_":
-            continue
-
-        # get room name from slot
-        participant_room = room_slot.split('_')[0]
-        # add participant to assigned room
-        participant_rooms[participant] = participant_room
-
-    # go over all defined constraints
-    for source_participant, constraints in Container.constraints.items():
-        constraints: list
-        # select first room as master room
-        master_room = participant_rooms[source_participant]
-        # validate, that all participants are in the same room
-        for target_participant in constraints:
-            # if not, discard this solution
-            if participant_rooms[target_participant] != master_room:
+            # if count of yet unassigned room slots is smaller than
+            # count of constrained participants yet to be assigned
+            if unassigned_room_slot_count < len(constrained_participants) - constraint_assigned_room_slots:
+                # then assignment is not possible
                 return False
 
-    # everything is ok
-    return True
+        if forwardcheck:
+            for room_slot, participant_name in assignments.items():
+                if participant_name == '_':
+                    continue
+
+                # for each assigned participant
+                room = Utils.get_room_from_slot(room_slot)
+                if participant_name in Container.constraints:
+                    for constraint_participant in Container.constraints[participant_name]:
+                        # for each their constraint
+                        for slot in room_slots:
+                            if slot.startswith(room):
+                                # only for slots not in current room
+                                continue
+
+                            # remove it from domain of possible values
+                            domain: Domain = participant_domains[slot]
+                            if constraint_participant in domain:
+                                domain.hideValue(constraint_participant)
+
+        return True

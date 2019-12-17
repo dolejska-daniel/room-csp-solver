@@ -1,30 +1,29 @@
 from constraint import Constraint, Unassigned, Domain
 
-from room_csp.logic import Container
+from ..container import Container
+from ..utils import Utils
 
 
 class SameRoomSameGenders(Constraint):
     """ Ensures that there is only one gender per room. No gender mixed assignments. """
 
     def __call__(
-        self,
-        room_slots,
-        participant_domains,
-        assignments,
-        forwardcheck=False,
-        _unassigned=Unassigned,
+            self,
+            room_slots,
+            participant_domains,
+            assignments,
+            forwardcheck=False,
+            _unassigned=Unassigned,
     ):
-        print(type(room_slots), type(assignments))
         room_gender = {room_name: None for room_name in Container.rooms.keys()}
 
-        for room_slot in room_slots:
-            # get current slot assignment
-            participant = assignments.get(room_slot, _unassigned)
-            if participant is _unassigned or participant == '_':
+        # get current slot assignment
+        for room_slot, participant in assignments.items():
+            if participant == '_':
                 continue
 
             # select room from slot name
-            room = room_slot.split('_')[0]
+            room = Utils.get_room_from_slot(room_slot)
             # get participant's gender
             gender = Container.participants[participant]["gender"]
 
@@ -39,32 +38,30 @@ class SameRoomSameGenders(Constraint):
 
         # check whether forward check should be done
         if forwardcheck:
-            for room_slot in room_slots:
-                if room_slot in assignments:
-                    # for assigned slot get current participant
-                    participant = assignments.get(room_slot, _unassigned)
-                    if participant == '_':
-                        continue
+            # for assigned slot get current participant
+            for room_slot, participant in assignments.items():
+                if participant == '_':
+                    continue
 
-                    # select room from slot name
-                    room = room_slot.split('_')[0]
-                    # get participant's gender
-                    gender = Container.participants[participant]["gender"]
+                # select room from slot name
+                room = room_slot.split('_')[0]
+                # get participant's gender
+                gender = Container.participants[participant]["gender"]
 
-                    for slot in range(0, Container.rooms[room]["beds"]):
-                        # for all other slots in this room
-                        target_room_slot = f"{room}_{slot}"
-                        # reduce available selection
+                for slot in range(0, Container.rooms[room]["beds"]):
+                    # for all other slots in this room
+                    target_room_slot = f"{room}_{slot}"
+                    # reduce available selection
 
-                        # get current domain
-                        participant_domain: Domain = participant_domains[target_room_slot]
-                        # get same gender participants
-                        same_gender_participants = Container.participants_by_gender[gender]
-                        for domain_participant in participant_domain:
-                            # and for each participant from that domain
-                            # who is not of same gender
-                            if domain_participant not in same_gender_participants:
-                                # remove as possible value
-                                participant_domain.hideValue(domain_participant)
+                    # get current domain
+                    participant_domain: Domain = participant_domains[target_room_slot]
+                    # get same gender participants
+                    same_gender_participants = Container.participants_by_gender[gender]
+                    for domain_participant in participant_domain:
+                        # and for each participant from that domain
+                        # who is not of same gender
+                        if domain_participant not in same_gender_participants:
+                            # remove as possible value
+                            participant_domain.hideValue(domain_participant)
 
         return True
