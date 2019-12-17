@@ -1,5 +1,6 @@
 import traceback
 
+from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal, QModelIndex, Qt
 from PyQt5.QtGui import QStandardItemModel
 
@@ -105,3 +106,10 @@ class GenericTreeModel(QStandardItemModel):
 
     def remove_item(self, index: QModelIndex = ...):
         self.removeRow(index.row(), index.parent())
+
+    # ------------------------------------------------------dd--
+    #   Custom methods
+    # ------------------------------------------------------dd--
+
+    def flags(self, index: QtCore.QModelIndex) -> Qt.ItemFlags:
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable

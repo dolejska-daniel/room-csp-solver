@@ -107,7 +107,18 @@ class GenericTableModel(QAbstractTableModel):
 
         return QVariant()
 
+    def setData(self, index: QModelIndex, value: typing.Any, role: int = ...) -> bool:
+        if not index.isValid():
+            return False
+
+        if role == Qt.EditRole:
+            row: dict = self.dataset[index.row()]
+            keys = list(row.keys())
+            row[keys[index.column()]] = value
+
+        return True
+
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         """ Returns the item flags for the given index. """
 
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable

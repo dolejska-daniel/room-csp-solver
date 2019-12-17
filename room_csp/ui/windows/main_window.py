@@ -203,16 +203,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_create_constraint(self):
-        if self.participant_selection is None:
+        if self.participant_proxy_selection is None:
             return
 
-        participant_source_index = self.participant_proxy_selection.mapToSource(self.participant_proxy_selection)
+        participant_source_index = self.participant_proxy.mapToSource(self.participant_proxy_selection)
         participant_name = self.participant_model.data(participant_source_index, Qt.DisplayRole)
         data = {
             "name": participant_name,
             "enabled": True,
         }
-        if self.constraint_selection is None:
+        if self.constraint_proxy_selection is None:
             data["_items"] = []
             self.constraint_model.add_item(data)
 
