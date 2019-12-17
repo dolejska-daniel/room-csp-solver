@@ -1,5 +1,3 @@
-import traceback
-
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal, QModelIndex, Qt
 from PyQt5.QtGui import QStandardItemModel
@@ -81,34 +79,18 @@ class GenericTreeModel(QStandardItemModel):
         return items
 
     def add_item(self, data: dict, parent_index: QModelIndex = QModelIndex()):
-        # forbid duplicates in given sub-level
-        matching_items = self.findItems(data["name"], Qt.MatchExactly | Qt.MatchRecursive)
-        for matching_item in matching_items:
-            if matching_item.index().parent() == parent_index:
-                return
-
-        # forbid nesting items too deep
-        level = 0
-        temp_index = parent_index
-        while temp_index.isValid():
-            level += 1
-            temp_index = temp_index.parent()
-
-        # maximum nesting 1 level
-        if level > 1:
-            return
-
         parent = self.invisibleRootItem()
         if parent_index.isValid():
             parent = self.itemFromIndex(parent_index)
 
         parent.appendRow(self.create_item_row(data))
+        return True
 
     def remove_item(self, index: QModelIndex = ...):
         self.removeRow(index.row(), index.parent())
 
     # ------------------------------------------------------dd--
-    #   Custom methods
+    #   Method overrides
     # ------------------------------------------------------dd--
 
     def flags(self, index: QtCore.QModelIndex) -> Qt.ItemFlags:

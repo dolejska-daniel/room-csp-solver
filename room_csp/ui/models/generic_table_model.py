@@ -97,7 +97,7 @@ class GenericTableModel(QAbstractTableModel):
         if not index.isValid():
             return QVariant()
 
-        if role == Qt.DisplayRole:
+        if role == Qt.DisplayRole or role == Qt.EditRole:
             row_data = self.dataset[index.row()]
             row_data = list(row_data.values())
             return row_data[index.column()]

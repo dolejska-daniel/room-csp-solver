@@ -7,12 +7,11 @@ from PyQt5.QtWidgets import QAction, QMenu, QLineEdit, QFileDialog, QHeaderView,
     QMessageBox, QStatusBar
 from PyQt5.uic import loadUiType
 
-from room_csp.ui.models import GenericTableModel, TreeSortFilterProxyModel
-from room_csp.ui.models.generic_tree_model import GenericTreeModel
+from room_csp.ui.models import *
+from room_csp.ui.threads import *
+from room_csp.ui.views import *
 from .create_participant_dialog import CreateParticipantDialog
 from .create_room_dialog import CreateRoomDialog
-from ..threads import SolverThread
-from ..views import GenericTreeView, GenericTableView, ExtendedItemView
 
 qt_creator_file = "ui/main_window.ui"
 Ui_MainWindow, QMainWindow = loadUiType(qt_creator_file)
@@ -22,15 +21,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     """ Main program window. """
     resized = pyqtSignal()
 
-    participant_model: GenericTableModel = None
+    participant_model: ParticipantTableModel = None
     participant_proxy: QSortFilterProxyModel = None
     participant_proxy_selection: typing.Union[QModelIndex, None] = None
 
-    constraint_model: GenericTreeModel = None
+    constraint_model: ConstraintTreeModel = None
     constraint_proxy: QSortFilterProxyModel = None
     constraint_proxy_selection: typing.Union[QModelIndex, None] = None
 
-    room_model: GenericTableModel = None
+    room_model: RoomTableModel = None
     room_proxy: QSortFilterProxyModel = None
     room_proxy_selection: typing.Union[QModelIndex, None] = None
 
@@ -290,11 +289,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 "name": participant_name
             })
 
-        for room_name, room in solution.items():
-            room["name"] += f" ({len(room['_items'])}/{Utils.get_room_slot_count(room_name)})"
-
         solution_dataset = list(solution.values())
-        solution_dataset = sorted(solution_dataset, key=lambda x: x["name"])
+
+        sorted_room_names = Utils.get_room_names()
+        solution_dataset = sorted(solution_dataset, key=lambda x: sorted_room_names.index(x["name"]))
+
+        for room in solution_dataset:
+            room["name"] += f" ({len(room['_items'])}/{Utils.get_room_slot_count(room['name'])})"
+
         self.solution_model.set_dataset(solution_dataset)
 
     # ------------------------------------------------------dd--
@@ -378,7 +380,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def setup_participant_table(self):
         # initialize source model
-        self.participant_model = GenericTableModel(self)
+        self.participant_model = ParticipantTableModel(self)
         # initialize proxy model
         self.participant_proxy = QSortFilterProxyModel(self)
 
@@ -440,7 +442,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def setup_constraint_tree(self):
         # initialize source model
-        self.constraint_model = GenericTreeModel(self)
+        self.constraint_model = ConstraintTreeModel(self)
         # initialize proxy model
         self.constraint_proxy = TreeSortFilterProxyModel(self)
         self.constraint_proxy.setRecursiveFilteringEnabled(True)
@@ -498,7 +500,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def setup_room_widgets(self):
         # initialize source model
-        self.room_model = GenericTableModel(self)
+        self.room_model = RoomTableModel(self)
         # initialize proxy model
         self.room_proxy = QSortFilterProxyModel(self)
 

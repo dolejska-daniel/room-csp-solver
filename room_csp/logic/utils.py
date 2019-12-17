@@ -46,6 +46,14 @@ class Utils:
         return Container.participants[participant_name]["gender"]
 
     @staticmethod
+    def get_rooms() -> dict:
+        return Container.rooms
+
+    @staticmethod
+    def get_room_names() -> list:
+        return list(Container.rooms.keys())
+
+    @staticmethod
     def get_room_type(room_name: str) -> str:
         return Container.rooms[room_name]["type"]
 
