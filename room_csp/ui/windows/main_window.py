@@ -2,7 +2,7 @@ import json
 import typing
 
 from PyQt5.QtCore import pyqtSlot, QSortFilterProxyModel, QRegExp, Qt, pyqtSignal, QModelIndex, QAbstractItemModel
-from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtGui import QMouseEvent, QKeyEvent
 from PyQt5.QtWidgets import QAction, QMenu, QLineEdit, QFileDialog, QHeaderView, QAbstractItemView, \
     QMessageBox, QStatusBar
 from PyQt5.uic import loadUiType
@@ -343,7 +343,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def setup_item_view(self, view: ExtendedItemView, model: QAbstractItemModel, proxy: QAbstractItemModel = None,
                         on_data_change: pyqtSlot = None, on_selection_change: pyqtSlot = None,
-                        on_mouse_release: pyqtSlot = None):
+                        on_mouse_release: pyqtSlot = None, on_key_release: pyqtSlot = None,
+                        on_double_click: pyqtSlot = None):
         # setup provided models accordingly
         self.setup_item_view_models(model, proxy, on_data_change)
         # set proxy as table source model
@@ -351,12 +352,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # set single selection mode
         view.setSelectionMode(QAbstractItemView.SingleSelection)
+        # set row selection behaviour
+        view.setSelectionBehavior(QAbstractItemView.SelectRows)
         # connect selection signal
         if on_selection_change is not None:
             view.selectionModel().selectionChanged.connect(on_selection_change)
         # connect mouse signal
         if on_mouse_release is not None:
             view.mouseReleased.connect(on_mouse_release)
+        # connect mouse signal
+        if on_key_release is not None:
+            view.keyReleased.connect(on_key_release)
+        # connect mouse doubleclick signal
+        if on_double_click is not None:
+            view.doubleClicked.connect(on_double_click)
 
     def setup_item_view_models(self, model: QAbstractItemModel, proxy: QAbstractItemModel = None,
                                on_data_change: pyqtSlot = None):
@@ -389,7 +398,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setup_item_view(
             table, self.participant_model, self.participant_proxy,
             self.on_participant_model_changed, self.on_participant_selection_changed,
-            self.on_participant_table_mouse_release
+            self.on_participant_table_mouse_release, self.on_participant_table_key_release
         )
 
     def setup_participant_search(self):
@@ -432,6 +441,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not table.indexAt(event.pos()).isValid():
             table.selectionModel().clearSelection()
 
+    @pyqtSlot(QKeyEvent)
+    def on_participant_table_key_release(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Delete and self.participant_proxy_selection is not None:
+            source_index = self.participant_proxy.mapToSource(self.participant_proxy_selection)
+            self.participant_model.remove_item(source_index)
+
     # ------------------------------------------------------dd--
     #   Constraint views
     # ------------------------------------------------------dd--
@@ -452,7 +467,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setup_item_view(
             tree, self.constraint_model, self.constraint_proxy,
             self.on_constraint_model_changed, self.on_constraint_selection_changed,
-            self.on_constraint_tree_mouse_release
+            self.on_constraint_tree_mouse_release, self.on_constraint_tree_key_release,
+            self.on_constraint_tree_double_click
         )
 
     def setup_constraint_search(self):
@@ -494,6 +510,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not tree.indexAt(event.pos()).isValid():
             tree.selectionModel().clearSelection()
 
+    @pyqtSlot(QKeyEvent)
+    def on_constraint_tree_key_release(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Delete and self.constraint_proxy_selection is not None:
+            source_index = self.constraint_proxy.mapToSource(self.constraint_proxy_selection)
+            self.constraint_model.remove_item(source_index)
+
+    @pyqtSlot(QModelIndex)
+    def on_constraint_tree_double_click(self, index: QModelIndex):
+        if index.isValid():
+            self.constraint_model.toggle_item(index)
+
     # ------------------------------------------------------dd--
     #   Room views
     # ------------------------------------------------------dd--
@@ -509,7 +536,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setup_item_view(
             table, self.room_model, self.room_proxy,
             self.on_room_model_changed, self.on_room_selection_changed,
-            self.on_room_table_mouse_release
+            self.on_room_table_mouse_release, self.on_room_table_key_release
         )
 
     @pyqtSlot()
@@ -535,6 +562,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         table = self.get_room_table()
         if not table.indexAt(event.pos()).isValid():
             table.selectionModel().clearSelection()
+
+    @pyqtSlot(QKeyEvent)
+    def on_room_table_key_release(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Delete and self.room_proxy_selection is not None:
+            source_index = self.room_proxy.mapToSource(self.room_proxy_selection)
+            self.room_model.remove_item(source_index)
 
     # ------------------------------------------------------dd--
     #   Solution views

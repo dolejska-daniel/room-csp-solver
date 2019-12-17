@@ -88,10 +88,10 @@ class Container:
 
             for participant_name, subconstraints in Container.constraints.items():
                 if participant_name in Container.constraints_all:
-                    Container.constraints_all[participant_name] += set(subconstraints)
+                    Container.constraints_all[participant_name] += subconstraints
                     continue
 
-                Container.constraints_all[participant_name] = set(subconstraints)
+                Container.constraints_all[participant_name] = subconstraints
 
                 for constrained_participant_name in subconstraints:
                     if constrained_participant_name in Container.constraints_all:

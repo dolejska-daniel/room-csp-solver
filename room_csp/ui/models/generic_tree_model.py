@@ -2,7 +2,7 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal, QModelIndex, Qt
 from PyQt5.QtGui import QStandardItemModel
 
-from room_csp.ui.models import GenericItem
+from .generic_item import GenericItem
 
 
 class GenericTreeModel(QStandardItemModel):

@@ -34,6 +34,12 @@ class ConstraintTreeModel(GenericTreeModel):
 
         return super().add_item(data, parent_index)
 
+    def toggle_item(self, index: QModelIndex):
+        item_enabled_index = self.index(index.row(), 1, index.parent())
+        item = self.itemFromIndex(item_enabled_index)
+        item.value = not item.value
+        self.dataChanged.emit(item_enabled_index, item_enabled_index)
+
     def change_participant_name(self, old_name: str, new_name: str):
         items = self.findItems(old_name, Qt.MatchExactly | Qt.MatchRecursive, 0)
         for item in items:
