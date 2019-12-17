@@ -6,20 +6,6 @@ from ..utils import Utils
 class CustomParticipantRequirements(Constraint):
     """ Ensures that all participant's requirements are met. """
 
-    @staticmethod
-    def valid_room_assignment(source_participant_name: str, constrained_participant_name: str,
-                              local_assignments: dict) -> bool:
-        """ This method checks wheter the constraint between two participant is satisfied.
-
-         Method expects source_participant to be assigned to any room, constrained participant
-         does not have to be assigned yet.
-        """
-        if constrained_participant_name not in local_assignments:
-            # constrained participant has not been assigned to any room yet
-            return True
-
-        return local_assignments[source_participant_name] != local_assignments[constrained_participant_name]
-
     def __call__(
             self,
             room_slots,
