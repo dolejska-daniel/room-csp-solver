@@ -1,16 +1,16 @@
 import typing
 
-from PyQt5.QtCore import QModelIndex, Qt
+from PyQt5.QtCore import QModelIndex, Qt, pyqtSignal
 
 from .generic_table_model import GenericTableModel
 
 
 class ParticipantTableModel(GenericTableModel):
-    main_window = None
+    participant_renamed = pyqtSignal(str, str)
+    participant_removed = pyqtSignal(str)
 
-    def __init__(self, main_window):
-        super().__init__(main_window)
-        self.main_window = main_window
+    def __init__(self, parent):
+        super().__init__(parent)
 
     # ------------------------------------------------------dd--
     #   Method overrides
@@ -22,8 +22,17 @@ class ParticipantTableModel(GenericTableModel):
             for row in self.dataset:
                 row_value = list(row.values())[0]
                 if row_value == value:
+                    # forbid duplicate names
                     return False
 
         old_value = self.data(index, Qt.DisplayRole)
-        self.main_window.constraint_model.change_participant_name(old_value, value)
+        self.participant_renamed.emit(old_value, value)
         return super().setData(index, value, role)
+
+    def remove_item(self, index: QModelIndex = ...):
+        # remove any related constraints
+        participant_name = self.data(index, Qt.DisplayRole)
+        self.participant_removed.emit(participant_name)
+
+        # remove participant row
+        super().remove_item(index)

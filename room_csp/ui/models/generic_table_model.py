@@ -54,9 +54,11 @@ class GenericTableModel(QAbstractTableModel):
         self.endInsertRows()
 
     def remove_item(self, index: QModelIndex = ...):
+        self.layoutAboutToBeChanged.emit()
         self.beginRemoveRows(QModelIndex(), index.row(), index.row())
         del self.dataset[index.row()]
         self.endRemoveRows()
+        self.layoutChanged.emit()
 
     # ------------------------------------------------------dd--
     #   Header

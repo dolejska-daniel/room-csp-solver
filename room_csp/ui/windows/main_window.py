@@ -471,6 +471,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.on_constraint_tree_double_click
         )
 
+        if self.participant_model is None:
+            raise RuntimeError("Method `setup_participant_widgets` must be called before `setup_constraint_widgets`.")
+
+        self.participant_model.participant_renamed.connect(self.constraint_model.on_participant_renamed)
+        self.participant_model.participant_removed.connect(self.constraint_model.on_participant_removed)
+
     def setup_constraint_search(self):
         field: QLineEdit = self.findChild(QLineEdit, "ConstraintSearch")
         field.textChanged.connect(self.on_constraint_search)

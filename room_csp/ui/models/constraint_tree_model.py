@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, QModelIndex
+from PyQt5.QtCore import Qt, QModelIndex, pyqtSlot
 
 from .generic_tree_model import GenericTreeModel
 
@@ -48,8 +48,15 @@ class ConstraintTreeModel(GenericTreeModel):
         item.value = not item.value
         self.dataChanged.emit(item_enabled_index, item_enabled_index)
 
-    def change_participant_name(self, old_name: str, new_name: str):
+    @pyqtSlot(str, str)
+    def on_participant_renamed(self, old_name: str, new_name: str):
         items = self.findItems(old_name, Qt.MatchExactly | Qt.MatchRecursive, 0)
         for item in items:
             item.value = new_name
             self.dataChanged.emit(item.index(), item.index())
+
+    @pyqtSlot(str)
+    def on_participant_removed(self, participant_name: str):
+        items = self.findItems(participant_name, Qt.MatchExactly | Qt.MatchRecursive, 0)
+        for item in items:
+            self.removeRow(item.index().row(), item.index().parent())
