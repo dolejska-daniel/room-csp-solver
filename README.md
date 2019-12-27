@@ -1,9 +1,10 @@
-# Camp Room CSP
-> v0.1
+# Room CSP solver
+> v1.0
 
-TODOs:
-  - Extend room options:
-    - Enabled/Disabled
-    - Specific gender only
-  - Converters from XXX?
-  - UI?
+Room constraint satisfaction problem solver application.
+
+## Installation
+_TBD_
+
+## Controls
+_TBD_
