@@ -12,6 +12,10 @@ class ParticipantTableModel(GenericTableModel):
         super().__init__(main_window)
         self.main_window = main_window
 
+    # ------------------------------------------------------dd--
+    #   Method overrides
+    # ------------------------------------------------------dd--
+
     def setData(self, index: QModelIndex, value: typing.Any, role: int = ...) -> bool:
         if index.column() == 0:
             # changing participant's name

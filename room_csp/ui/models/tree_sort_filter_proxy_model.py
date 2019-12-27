@@ -6,6 +6,10 @@ class TreeSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+    # ------------------------------------------------------dd--
+    #   Method overrides
+    # ------------------------------------------------------dd--
+
     def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
         if not super().filterAcceptsRow(source_row, source_parent):
             if not source_parent.isValid():

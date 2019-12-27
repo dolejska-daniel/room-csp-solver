@@ -22,5 +22,3 @@ class RoomAssignmentProblem(Problem):
         self.addConstraint(CustomParticipantRequirements())
         # all participants have room
         self.addConstraint(AllParticipantsAssigned())
-
-        # TODO: Add constraint on Room.Type x Participant.Type

@@ -8,6 +8,10 @@ class ConstraintTreeModel(GenericTreeModel):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+    # ------------------------------------------------------dd--
+    #   Method overrides
+    # ------------------------------------------------------dd--
+
     def add_item(self, data: dict, parent_index: QModelIndex = QModelIndex()):
         # forbid parent-child duplicates
         if parent_index.isValid():
@@ -33,6 +37,10 @@ class ConstraintTreeModel(GenericTreeModel):
             return False
 
         return super().add_item(data, parent_index)
+
+    # ------------------------------------------------------dd--
+    #   Custom methods
+    # ------------------------------------------------------dd--
 
     def toggle_item(self, index: QModelIndex):
         item_enabled_index = self.index(index.row(), 1, index.parent())

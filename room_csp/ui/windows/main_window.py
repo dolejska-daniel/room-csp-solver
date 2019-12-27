@@ -518,6 +518,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot(QModelIndex)
     def on_constraint_tree_double_click(self, index: QModelIndex):
+        index = self.constraint_proxy.mapToSource(index)
         if index.isValid():
             self.constraint_model.toggle_item(index)
 
