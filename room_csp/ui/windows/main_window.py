@@ -107,10 +107,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         filepath, _ = QFileDialog.getOpenFileName(self, "Open file", filter="JSON File (*.json)")
         if filepath:
             with open(filepath, 'r') as fp:
-                data = json.load(fp)
-                self.participant_model.set_dataset(data["participants"])
-                self.room_model.set_dataset(data["rooms"])
-                self.constraint_model.set_dataset(data["constraints"])
+                try:
+                    data = json.load(fp)
+                    print(data)
+                    self.participant_model.set_dataset(data["participants"])
+                    self.room_model.set_dataset(data["rooms"])
+                    self.constraint_model.set_dataset(data["constraints"])
+                except Exception as e:
+                    from sys import stderr
+                    print(repr(e), file=stderr)
+                    from traceback import print_exc
+                    print_exc()
+
+                    QMessageBox.critical(
+                        self, "Failed to parse file",
+                        "Application failed to parse selected file."
+                        "\nConsole output may contain additional information.",
+                        QMessageBox.Ok
+                    )
+
+                    self.participant_model.set_dataset([])
+                    self.room_model.set_dataset([])
+                    self.constraint_model.set_dataset([])
 
             self.get_constraints_tree().expandAll()
 

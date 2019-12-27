@@ -36,8 +36,6 @@ class GenericTreeModel(QStandardItemModel):
         self.changePersistentIndexList(self.persistentIndexList(), self.persistentIndexList())
         self.layoutChanged.emit()
 
-        self.get_dataset()
-
     def get_dataset(self) -> [dict]:
         dataset = []
         for row in range(self.rowCount()):
